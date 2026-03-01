@@ -1,4 +1,4 @@
-# 🏄 Shaper Shack
+# 🏄 Shaper Shed
 
 > The world's best surfboard shapers and glassers — all in one place.
 
