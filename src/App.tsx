@@ -41,7 +41,83 @@ const T = {
   "sidebar.categories":"Categories","sidebar.submitCta":"Submit a Resource",
 };
 
-function t(key, locale) { return T[key] || key; }
+const TRANSLATIONS = {
+  "pt-BR": {
+    "nav.add":"Adicionar Shaper","nav.submit":"Enviar Recurso","nav.saved":"Salvos","nav.signin":"Entrar","nav.join":"Cadastrar","nav.admin":"Admin",
+    "hero.headline":"Os Melhores Shapers do Mundo,","hero.sub":"em um só lugar.","hero.desc":"Um diretório colaborativo de shapers e glassers de todo o mundo.","hero.uploadHint":"Envie uma imagem pelo Admin",
+    "home.featured":"Destaque","home.empty":"Nenhum shaper encontrado — tente outra busca.","home.search":"Buscar","home.allListings":"Todos","home.clearFilters":"Limpar filtros","home.searchPlaceholder":"Buscar shapers, locais, tipos de prancha…","home.changeImage":"🖼 Trocar Imagem",
+    "listing.back":"← Voltar","listing.save":"Salvar","listing.saved":"Salvo","listing.featured":"⭐ Destaque","listing.website":"Site","listing.boards":"Portfólio","listing.knowledge":"Conhecimento","listing.premium":"Premium","listing.country":"País","listing.location":"Localização","listing.type":"Tipo","listing.youtube":"Assistir","listing.viewWebsite":"Ver no Site →",
+    "reviews.title":"O que as pessoas dizem","reviews.add":"＋ Avaliar","reviews.submit":"Enviar Avaliação","reviews.rating":"Nota *","reviews.whichBoard":"Qual prancha? (opcional)","reviews.yourReview":"Sua avaliação *","reviews.yourName":"Seu nome (opcional)","reviews.submitted":"✓ Avaliação enviada.","reviews.modNote":"Avaliações são moderadas antes de serem publicadas.","reviews.reviews":"avaliações","reviews.review":"avaliação","reviews.of":"Avaliações —","reviews.seeAllOf":"Ver todas",
+    "auth.welcomeBack":"Bem-vindo de volta","auth.signinDesc":"Entre para salvar e contribuir.","auth.joinTitle":"Cadastre-se","auth.joinDesc":"Conta gratuita — salve, avalie e ajude a construir o diretório.","auth.password":"Senha","auth.createAccount":"Criar Conta","auth.noAccount":"Sem conta? Cadastre-se","auth.joinFree":"Cadastrar","auth.alreadyMember":"Já tem conta? Entre","auth.signIn":"Entrar",
+    "sub.title":"Quem você está adicionando?","sub.nameRequired":"Nome *","sub.craftRequired":"O que eles fazem? *","sub.country":"País *","sub.submitBtn":"Enviar ✓","sub.success":"Enviado!","sub.browseDir":"Ver Diretório","sub.submitAnother":"Enviar Outro","sub.nextDetails":"Próximo →","sub.nextInfo":"Próximo →","sub.back":"← Voltar",
+    "general.cancel":"Cancelar","general.select":"Selecionar…",
+    "profile.signOut":"Sair","profile.saved":"Salvos","profile.contributions":"Contribuições","profile.reviews":"Avaliações","profile.nominated":"Indicados","profile.activity":"Atividade","profile.badges":"Conquistas","profile.signInPrompt":"Entre para ver seu perfil.",
+    "saved.title":"Salvos","saved.empty":"Nada salvo ainda.","saved.browse":"Ver Diretório","saved.subtitle":"Shapers e glassers salvos.",
+  },
+  "fr": {
+    "nav.add":"Ajouter un Shaper","nav.submit":"Soumettre","nav.saved":"Sauvegardés","nav.signin":"Connexion","nav.join":"Rejoindre","nav.admin":"Admin",
+    "hero.headline":"Les Meilleurs Shapers du Monde,","hero.sub":"au même endroit.","hero.desc":"Un annuaire collaboratif de shapers et glassers du monde entier.","hero.uploadHint":"Téléversez une image via Admin",
+    "home.featured":"À la une","home.empty":"Aucun shaper trouvé.","home.allListings":"Tous","home.clearFilters":"Effacer les filtres","home.searchPlaceholder":"Rechercher shapers, lieux, types de planches…","home.changeImage":"🖼 Changer l'image",
+    "listing.back":"← Retour","listing.website":"Site web","listing.boards":"Portfolio","listing.knowledge":"Savoir","listing.premium":"Premium","listing.country":"Pays","listing.location":"Lieu","listing.type":"Type","listing.youtube":"Regarder","listing.featured":"⭐ À la une",
+    "reviews.title":"Ce que les gens disent","reviews.add":"＋ Ajouter un avis","reviews.submit":"Soumettre","reviews.rating":"Note *","reviews.whichBoard":"Quelle planche ? (optionnel)","reviews.yourReview":"Votre avis *","reviews.yourName":"Votre nom (optionnel)","reviews.submitted":"✓ Avis soumis.","reviews.modNote":"Les avis sont modérés avant publication.","reviews.reviews":"avis","reviews.review":"avis","reviews.of":"Avis —","reviews.seeAllOf":"Voir tout",
+    "auth.welcomeBack":"Bon retour","auth.signinDesc":"Connectez-vous pour sauvegarder et contribuer.","auth.joinTitle":"Rejoindre","auth.joinDesc":"Compte gratuit — sauvegardez, évaluez, contribuez.","auth.password":"Mot de passe","auth.createAccount":"Créer un compte","auth.noAccount":"Pas de compte ? Inscrivez-vous","auth.joinFree":"Rejoindre","auth.alreadyMember":"Déjà membre ? Connectez-vous","auth.signIn":"Connexion",
+    "general.cancel":"Annuler","general.select":"Sélectionner…",
+    "profile.signOut":"Déconnexion","profile.saved":"Sauvegardés","profile.contributions":"Contributions","profile.reviews":"Avis","profile.nominated":"Nominés","profile.activity":"Activité","profile.badges":"Badges","profile.signInPrompt":"Connectez-vous pour voir votre profil.",
+    "saved.title":"Sauvegardés","saved.empty":"Rien de sauvegardé.","saved.browse":"Voir l'annuaire","saved.subtitle":"Shapers et glassers sauvegardés.",
+  },
+  "es": {
+    "nav.add":"Añadir Shaper","nav.submit":"Enviar","nav.saved":"Guardados","nav.signin":"Entrar","nav.join":"Unirse","nav.admin":"Admin",
+    "hero.headline":"Los Mejores Shapers del Mundo,","hero.sub":"en un solo lugar.","hero.desc":"Un directorio colaborativo de shapers y glassers de todo el mundo.",
+    "home.featured":"Destacados","home.empty":"No se encontraron shapers.","home.allListings":"Todos","home.clearFilters":"Limpiar filtros","home.searchPlaceholder":"Buscar shapers, lugares, tipos de tabla…","home.changeImage":"🖼 Cambiar imagen",
+    "listing.back":"← Volver","listing.website":"Web","listing.boards":"Portfolio","listing.knowledge":"Conocimiento","listing.premium":"Premium","listing.country":"País","listing.location":"Ubicación","listing.type":"Tipo","listing.youtube":"Ver","listing.featured":"⭐ Destacado",
+    "reviews.title":"Lo que dice la gente","reviews.add":"＋ Añadir reseña","reviews.submit":"Enviar","reviews.rating":"Puntuación *","reviews.whichBoard":"¿Qué tabla? (opcional)","reviews.yourReview":"Tu reseña *","reviews.yourName":"Tu nombre (opcional)","reviews.submitted":"✓ Reseña enviada.","reviews.modNote":"Las reseñas se moderan antes de publicarse.","reviews.reviews":"reseñas","reviews.review":"reseña","reviews.of":"Reseñas —","reviews.seeAllOf":"Ver todo",
+    "auth.welcomeBack":"Bienvenido de nuevo","auth.password":"Contraseña","auth.createAccount":"Crear cuenta","auth.noAccount":"¿Sin cuenta? Únete","auth.joinFree":"Unirse","auth.alreadyMember":"¿Ya eres miembro? Entra","auth.signIn":"Entrar",
+    "general.cancel":"Cancelar","general.select":"Seleccionar…",
+    "profile.signOut":"Cerrar sesión","profile.saved":"Guardados","profile.contributions":"Contribuciones","profile.reviews":"Reseñas","profile.nominated":"Nominados","profile.activity":"Actividad","profile.badges":"Insignias","profile.signInPrompt":"Inicia sesión para ver tu perfil.",
+    "saved.title":"Guardados","saved.empty":"Nada guardado aún.","saved.browse":"Ver directorio","saved.subtitle":"Shapers y glassers guardados.",
+  },
+  "de": {
+    "nav.add":"Shaper hinzufügen","nav.submit":"Einreichen","nav.saved":"Gespeichert","nav.signin":"Anmelden","nav.join":"Registrieren","nav.admin":"Admin",
+    "hero.headline":"Die besten Shaper der Welt,","hero.sub":"an einem Ort.","hero.desc":"Ein gemeinschaftlich erstelltes Verzeichnis von Surfboard-Shapern und Glassern aus aller Welt.",
+    "home.featured":"Empfohlen","home.empty":"Keine Shaper gefunden.","home.allListings":"Alle","home.clearFilters":"Filter löschen","home.searchPlaceholder":"Shaper, Orte, Board-Typen suchen…",
+    "listing.back":"← Zurück","listing.website":"Website","listing.boards":"Board-Portfolio","listing.knowledge":"Wissen","listing.premium":"Premium","listing.country":"Land","listing.location":"Standort","listing.type":"Typ","listing.youtube":"Ansehen","listing.featured":"⭐ Empfohlen",
+    "reviews.title":"Was die Leute sagen","reviews.add":"＋ Bewertung hinzufügen","reviews.submit":"Einreichen","reviews.rating":"Bewertung *","reviews.whichBoard":"Welches Board? (optional)","reviews.yourReview":"Deine Bewertung *","reviews.yourName":"Dein Name (optional)","reviews.submitted":"✓ Bewertung eingereicht.","reviews.modNote":"Bewertungen werden vor der Veröffentlichung moderiert.","reviews.reviews":"Bewertungen","reviews.review":"Bewertung","reviews.of":"Bewertungen —","reviews.seeAllOf":"Alle anzeigen",
+    "auth.welcomeBack":"Willkommen zurück","auth.password":"Passwort","auth.createAccount":"Konto erstellen","auth.noAccount":"Kein Konto? Registrieren","auth.joinFree":"Registrieren","auth.alreadyMember":"Bereits Mitglied? Anmelden","auth.signIn":"Anmelden",
+    "general.cancel":"Abbrechen","general.select":"Auswählen…",
+    "profile.signOut":"Abmelden","profile.saved":"Gespeichert","profile.contributions":"Beiträge","profile.reviews":"Bewertungen","profile.badges":"Abzeichen","profile.signInPrompt":"Melde dich an, um dein Profil zu sehen.",
+    "saved.title":"Gespeichert","saved.empty":"Noch nichts gespeichert.","saved.browse":"Verzeichnis durchsuchen","saved.subtitle":"Gespeicherte Shaper und Glasser.",
+  },
+  "ja": {
+    "nav.add":"シェイパーを追加","nav.submit":"登録する","nav.saved":"保存済み","nav.signin":"ログイン","nav.join":"参加する","nav.admin":"管理",
+    "hero.headline":"世界最高のシェイパーたちが、","hero.sub":"ここに集結。","hero.desc":"サーファーたちが作り上げた、世界中のサーフボード・シェイパーとグラッサーのディレクトリ。",
+    "home.featured":"注目","home.empty":"シェイパーが見つかりません。","home.allListings":"すべて","home.clearFilters":"フィルターをクリア","home.searchPlaceholder":"シェイパー、場所、ボードタイプを検索…",
+    "listing.back":"← 戻る","listing.website":"ウェブサイト","listing.boards":"ボードラインナップ","listing.knowledge":"シェイピング知識","listing.premium":"プレミアム","listing.country":"国","listing.location":"場所","listing.type":"タイプ","listing.youtube":"動画を見る","listing.featured":"⭐ 注目",
+    "reviews.title":"みんなの声","reviews.add":"＋ レビューを書く","reviews.submit":"送信","reviews.rating":"評価 *","reviews.yourReview":"レビュー *","reviews.yourName":"お名前（任意）","reviews.submitted":"✓ レビューを送信しました。","reviews.reviews":"件のレビュー","reviews.review":"件のレビュー","reviews.of":"レビュー —","reviews.seeAllOf":"すべて見る",
+    "auth.welcomeBack":"おかえりなさい","auth.password":"パスワード","auth.createAccount":"アカウントを作成","auth.noAccount":"アカウントをお持ちでない方","auth.joinFree":"参加する","auth.alreadyMember":"すでにメンバーの方","auth.signIn":"ログイン",
+    "general.cancel":"キャンセル","general.select":"選択してください…",
+    "profile.signOut":"ログアウト","profile.saved":"保存済み","profile.contributions":"貢献","profile.reviews":"レビュー","profile.badges":"バッジ","profile.signInPrompt":"プロフィールを見るにはログインしてください。",
+    "saved.title":"保存済み","saved.empty":"まだ何も保存されていません。","saved.browse":"ディレクトリを見る","saved.subtitle":"保存したシェイパーとグラッサー。",
+  },
+  "ko": {
+    "nav.add":"셰이퍼 추가","nav.submit":"제출","nav.saved":"저장됨","nav.signin":"로그인","nav.join":"가입","nav.admin":"관리",
+    "hero.headline":"세계 최고의 셰이퍼들이,","hero.sub":"한 곳에 모였습니다.","hero.desc":"서퍼 커뮤니티가 만든 전 세계 서프보드 셰이퍼와 글래서 디렉토리.",
+    "home.featured":"추천","home.empty":"셰이퍼를 찾을 수 없습니다.","home.allListings":"전체","home.clearFilters":"필터 초기화","home.searchPlaceholder":"셰이퍼, 지역, 보드 유형 검색…",
+    "listing.back":"← 뒤로","listing.website":"웹사이트","listing.boards":"보드 포트폴리오","listing.knowledge":"지식","listing.premium":"프리미엄","listing.country":"국가","listing.location":"위치","listing.type":"유형","listing.youtube":"영상 보기","listing.featured":"⭐ 추천",
+    "reviews.title":"사람들의 이야기","reviews.add":"＋ 리뷰 작성","reviews.submit":"제출","reviews.rating":"평점 *","reviews.yourReview":"리뷰 *","reviews.yourName":"이름 (선택)","reviews.submitted":"✓ 리뷰가 제출되었습니다.","reviews.reviews":"개의 리뷰","reviews.review":"개의 리뷰","reviews.of":"리뷰 —","reviews.seeAllOf":"전체 보기",
+    "auth.welcomeBack":"다시 오셨군요","auth.password":"비밀번호","auth.createAccount":"계정 만들기","auth.noAccount":"계정이 없으신가요?","auth.joinFree":"가입","auth.alreadyMember":"이미 회원이신가요?","auth.signIn":"로그인",
+    "general.cancel":"취소","general.select":"선택하세요…",
+    "profile.signOut":"로그아웃","profile.saved":"저장됨","profile.contributions":"기여","profile.reviews":"리뷰","profile.badges":"배지","profile.signInPrompt":"프로필을 보려면 로그인하세요.",
+    "saved.title":"저장됨","saved.empty":"아직 저장된 항목이 없습니다.","saved.browse":"디렉토리 보기","saved.subtitle":"저장한 셰이퍼와 글래서.",
+  },
+};
+
+function t(key, locale) {
+  // English locales all use the default T dictionary
+  if (!locale || locale.startsWith("en")) return T[key] || key;
+  const dict = TRANSLATIONS[locale];
+  if (dict && dict[key] !== undefined) return dict[key];
+  return T[key] || key; // fallback to English
+}
 
 // ─────────────────────────────────────────────
 // DATA
