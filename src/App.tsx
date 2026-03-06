@@ -2173,6 +2173,10 @@ function AdminPage() {
   const rejectReview = rv => { setPendingReviews(p=>p.filter(r=>r.id!==rv.id)); showToast("Review rejected."); };
 
   const handleHeroFile = file => {
+    if (file.size > 2000000) {
+      showToast("Image too large! Please use a URL instead (e.g. imgur.com)");
+      return;
+    }
     const r = new FileReader();
     r.onload = e => { setHeroImage(e.target.result); showToast("Hero image updated!"); };
     r.readAsDataURL(file);
@@ -2262,8 +2266,13 @@ function AdminPage() {
 
           {/* ── HERO IMAGE ── */}
           <p style={{fontSize:14,color:"var(--tx2)",marginBottom:16}}>
-            Upload a new hero image. Landscape photos work best. Recommended: 1800×700px or wider.
+            Add a hero image using a <strong>URL</strong> (recommended) or upload a small file (&lt;2MB).
           </p>
+          <div className="fg" style={{marginBottom:16}}>
+            <label className="fl">Paste a hero image URL (recommended)</label>
+            <input className="fi" placeholder="https://imgur.com/your-image.jpg" value={heroImage||""} onChange={e=>setHeroImage(e.target.value)} />
+            <p className="imghint">Tip: Upload your image to <strong>imgur.com</strong> or <strong>cloudinary.com</strong>, then paste the direct image URL here.</p>
+          </div>
           {heroImage && <img className="current-hero-preview" src={heroImage} alt="Current hero" />}
           <div className={`hero-upload-zone ${heroDrag?"drag":""}`}
             onDragOver={e=>{e.preventDefault();setHeroDrag(true)}} onDragLeave={()=>setHeroDrag(false)}
@@ -2271,13 +2280,8 @@ function AdminPage() {
             onClick={()=>heroRef.current.click()}>
             <input ref={heroRef} type="file" accept="image/*" style={{display:"none"}} onChange={e=>{if(e.target.files[0])handleHeroFile(e.target.files[0])}} />
             <div className="huz-ico">🖼️</div>
-            <div className="huz-p">Drop hero image here or click to upload</div>
-            <div className="huz-s">JPG, PNG, WebP — 1800×700px recommended</div>
-          </div>
-          <div className="fg">
-            <label className="fl">Or paste a hero image URL</label>
-            <input className="fi" placeholder="https://…" value={heroImage||""} onChange={e=>setHeroImage(e.target.value)} />
-            <p className="imghint">Tip: use <strong>imgur.com</strong> or <strong>cloudinary.com</strong> for a free permanent URL.</p>
+            <div className="huz-p">Or upload a small image (&lt;2MB)</div>
+            <div className="huz-s">Large files won't persist — use a URL instead</div>
           </div>
           {heroImage && <button className="btn brej bsm" style={{marginTop:8}} onClick={()=>{setHeroImage("");showToast("Removed.");}}>Remove Hero Image</button>}
         </div>
@@ -2378,10 +2382,26 @@ export default function App() {
 
   // Persist hero and logo images to localStorage
   useEffect(() => {
-    try { localStorage.setItem("ss_heroImage", heroImage); } catch {}
+    try { 
+      if (heroImage && heroImage.length > 2000000) {
+        console.warn("Hero image too large for localStorage, use a URL instead");
+      } else {
+        localStorage.setItem("ss_heroImage", heroImage); 
+      }
+    } catch (e) { 
+      console.error("Failed to save hero image:", e);
+    }
   }, [heroImage]);
   useEffect(() => {
-    try { localStorage.setItem("ss_logoImage", logoImage); } catch {}
+    try { 
+      if (logoImage && logoImage.length > 500000) {
+        console.warn("Logo image too large for localStorage, use a URL instead");
+      } else {
+        localStorage.setItem("ss_logoImage", logoImage); 
+      }
+    } catch (e) {
+      console.error("Failed to save logo image:", e);
+    }
   }, [logoImage]);
   // Persist listings to localStorage (for featured status, edits, etc.)
   useEffect(() => {
