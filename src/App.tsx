@@ -1289,6 +1289,9 @@ function ListingPage({ listing }) {
               {listing.website && (
                 <a className="btn bp bsm" href={listing.website} target="_blank" rel="noopener noreferrer">{tr("listing.website")} ↗</a>
               )}
+              {listing.instagram && (
+                <a className="btn bs bsm" href={`https://instagram.com/${listing.instagram}`} target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+              )}
             </div>
           </div>
 
@@ -1309,31 +1312,6 @@ function ListingPage({ listing }) {
             {listing.address && <div className="ld-mi"><span className="ld-mil">{tr("listing.location")}</span><span className="ld-miv">📍 {listing.address}</span></div>}
             {listing.founded && <div className="ld-mi"><span className="ld-mil">{tr("listing.founded2")}</span><span className="ld-miv">{listing.founded}</span></div>}
           </div>
-
-          {(listing.website || listing.instagram || listing.youtube_channel || listing.twitter) && (
-            <div className="ld-social" style={{ marginTop: 16 }}>
-              {listing.website && (
-                <TrackedLink href={listing.website} listingId={listing.id} listingName={listing.name} label="Website (header)" type="website" className="ld-socbtn web">
-                  {tr("listing.website")}
-                </TrackedLink>
-              )}
-              {listing.instagram && (
-                <TrackedLink href={`https://instagram.com/${listing.instagram}`} listingId={listing.id} listingName={listing.name} label="Instagram" type="instagram" className="ld-socbtn ig">
-                  Instagram
-                </TrackedLink>
-              )}
-              {listing.youtube_channel && (
-                <TrackedLink href={`https://youtube.com/@${listing.youtube_channel}`} listingId={listing.id} listingName={listing.name} label="YouTube" type="youtube" className="ld-socbtn yt">
-                  YouTube
-                </TrackedLink>
-              )}
-              {listing.twitter && (
-                <TrackedLink href={`https://x.com/${listing.twitter}`} listingId={listing.id} listingName={listing.name} label="X/Twitter" type="twitter" className="ld-socbtn tw">
-                  X
-                </TrackedLink>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -1347,25 +1325,6 @@ function ListingPage({ listing }) {
             </div>
           )}
         </div>
-
-        {/* Social links section - always visible */}
-        {(listing.website || listing.instagram) && (
-          <div className="ld-sec">
-            <div className="ld-sec-title">Connect</div>
-            <div className="ld-social">
-              {listing.website && (
-                <TrackedLink href={listing.website} listingId={listing.id} listingName={listing.name} label="Website" type="website" className="ld-socbtn web">
-                  🌐 Visit Website
-                </TrackedLink>
-              )}
-              {listing.instagram && (
-                <TrackedLink href={`https://instagram.com/${listing.instagram}`} listingId={listing.id} listingName={listing.name} label="Instagram" type="instagram" className="ld-socbtn ig">
-                  📷 @{listing.instagram}
-                </TrackedLink>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Reviews and Q&A - always shown after About for all listings */}
         <ReviewSection
