@@ -33,8 +33,8 @@ const T = {
   "listing.back":"← Back to directory","listing.save":"Save","listing.saved":"Saved","listing.featured":"⭐ Featured","listing.founded":"Est.","listing.founded2":"Founded","listing.website":"Website","listing.boards":"Board Portfolio","listing.knowledge":"Shaping Knowledge","listing.premium":"Premium","listing.country":"Country","listing.location":"Location","listing.type":"Type","listing.instagram":"Instagram","listing.youtube":"Watch","listing.viewWebsite":"View on Website →","listing.premiumBadge":"Premium Profile","listing.noPremium":"This shaper hasn't upgraded to Premium yet.","listing.signinToSave":"Sign in to save",
   "reviews.title":"What people are saying","reviews.add":"＋ Add a Review","reviews.signinCta":"Sign in to leave a review","reviews.seeAll":"See all reviews →","reviews.submit":"Submit Review","reviews.modNote":"Reviews are moderated before going live — usually within 24 hours.","reviews.rating":"Rating *","reviews.whichBoard":"Which board? (optional)","reviews.yourReview":"Your review *","reviews.yourName":"Your name (optional)","reviews.submitted":"✓ Review submitted — it'll appear once approved.","reviews.seeAllOf":"See all","reviews.reviewsOf":"reviews →","reviews.of":"Reviews —","reviews.review":"review","reviews.reviews":"reviews",
   "ask.title":"Ask a Shaper","ask.submit":"Submit Question","ask.namePlaceholder":"Your name (optional)","ask.questionPlaceholder":"What do you want to ask","ask.submitBtn":"Ask →","ask.questions":"questions","ask.toPropose":"to propose a live session","ask.submitted":"✓ Question submitted — it'll go live once reviewed.","ask.reviewNote":"Questions are reviewed before going live · Upvote questions you want answered","ask.askTitle":"Ask","ask.atTarget":"🎉 We've hit {n} questions — we're reaching out to propose a live Q&A session!","ask.nearTarget":"Almost there — {n} more questions and we'll propose a live stream.","ask.defaultSub":"Ask anything about shaping, boards, or the craft. When we hit {n} questions, we'll propose a live session.",
-  "sub.title":"Who are you adding?","sub.name":"Name","sub.craft":"Craft","sub.craftAll":"All","sub.details":"The details","sub.about":"About them, or your experience of their work","sub.yourInfo":"Almost done","sub.firstName":"First Name","sub.lastName":"Last Name","sub.email":"Email","sub.relationship":"Relationship","sub.submitBtn":"Submit for Review ✓","sub.success":"Submission received!","sub.browseDir":"Browse Directory","sub.submitAnother":"Submit Another","sub.nextDetails":"Next — The Details →","sub.nextInfo":"Next — Your Info →","sub.back":"← Back","sub.whatNext":"What happens next","sub.nameRequired":"Shaper, Glasser or Business Name *","sub.craftRequired":"What's their craft? *","sub.country":"Country *","sub.town":"Town / Location","sub.website":"Website","sub.instagram":"Instagram handle","sub.yourInfoDesc":"Just your details — so we can follow up and keep you in the loop.","sub.relationshipTo":"Your relationship to","sub.privacyNote":"By submitting, you agree to receive occasional updates from Shaper Sheds. Your details are kept private — never shared with third parties.","sub.step1of3":"Step 1 of 3","sub.step2of3":"Step 2 of 3","sub.step3of3":"Step 3 of 3","sub.shaperType":"What do they do?","sub.shaper":"Shaper","sub.shaperDesc":"Shapes custom or production surfboards","sub.glasser":"Glasser","sub.glasserDesc":"Specialises in glassing, tints & finish work","sub.selectAll":"— pick all that apply","sub.aboutPlaceholder":"Tell us about this ","sub.successMsg":"Thanks for adding to the community. We'll review","sub.successGo":"and get them live within 48 hours.","sub.step1a":"We review the listing for accuracy and quality","sub.step2a":"We reach out to the shaper to let them know they're listed","sub.step3a":"It goes live on the directory — usually within 48 hours","sub.step4a":"Shapers can upgrade to Premium to unlock videos, boards and more",
-  "auth.welcomeBack":"Welcome back","auth.signinDesc":"Sign in to save listings and contribute to the directory.","auth.joinTitle":"Join Shaper Sheds","auth.joinDesc":"Free account — save listings, write reviews, and help build the world's best shaper directory.","auth.password":"Password","auth.heard":"How did you hear about us?","auth.lookingFor":"What are you looking for?","auth.createAccount":"Create Free Account","auth.noAccount":"No account? Join free","auth.joinFree":"Join Free","auth.alreadyMember":"Already a member? Sign in","auth.signIn":"Sign In",
+  "sub.title":"Who are you adding?","sub.name":"Name","sub.craft":"Craft","sub.craftAll":"All","sub.details":"The details","sub.about":"About them, or your experience of their work","sub.yourInfo":"Almost done","sub.firstName":"First Name","sub.lastName":"Last Name","sub.email":"Email","sub.relationship":"Relationship","sub.submitBtn":"Submit for Review ✓","sub.success":"Submission received!","sub.browseDir":"Browse Directory","sub.submitAnother":"Submit Another","sub.nextDetails":"Next — The Details →","sub.nextInfo":"Next — Your Info →","sub.back":"← Back","sub.whatNext":"What happens next","sub.nameRequired":"Shaper, Glasser or Business Name *","sub.craftRequired":"What's their craft? *","sub.country":"Country *","sub.town":"Town / Location","sub.website":"Website","sub.instagram":"Instagram handle","sub.yourInfoDesc":"Just your details — so we can follow up and keep you in the loop.","sub.relationshipTo":"Your relationship to","sub.privacyNote":"By submitting, you agree to receive occasional updates from Shaper Shed. Your details are kept private — never shared with third parties.","sub.step1of3":"Step 1 of 3","sub.step2of3":"Step 2 of 3","sub.step3of3":"Step 3 of 3","sub.shaperType":"What do they do?","sub.shaper":"Shaper","sub.shaperDesc":"Shapes custom or production surfboards","sub.glasser":"Glasser","sub.glasserDesc":"Specialises in glassing, tints & finish work","sub.selectAll":"— pick all that apply","sub.aboutPlaceholder":"Tell us about this ","sub.successMsg":"Thanks for adding to the community. We'll review","sub.successGo":"and get them live within 48 hours.","sub.step1a":"We review the listing for accuracy and quality","sub.step2a":"We reach out to the shaper to let them know they're listed","sub.step3a":"It goes live on the directory — usually within 48 hours","sub.step4a":"Shapers can upgrade to Premium to unlock videos, boards and more",
+  "auth.welcomeBack":"Welcome back","auth.signinDesc":"Sign in to save listings and contribute to the directory.","auth.joinTitle":"Join Shaper Shed","auth.joinDesc":"Free account — save listings, write reviews, and help build the world's best shaper directory.","auth.password":"Password","auth.heard":"How did you hear about us?","auth.lookingFor":"What are you looking for?","auth.createAccount":"Create Free Account","auth.noAccount":"No account? Join free","auth.joinFree":"Join Free","auth.alreadyMember":"Already a member? Sign in","auth.signIn":"Sign In",
   "profile.contributions":"Contributions","profile.reviews":"Reviews","profile.nominated":"Nominated","profile.signOut":"Sign out","profile.saved":"Saved","profile.activity":"Activity","profile.badges":"Badges","profile.backToDir":"← Back to directory","profile.noSaved":"No saved listings yet.","profile.noActivity":"No activity yet — submit a shaper, write a review, or ask a question to get started.","profile.badgesDesc":"Badges are earned through genuine contributions — they reflect who you are in this community.","profile.memberSince":"Member since","profile.signInPrompt":"Sign in to see your profile.","profile.notYetEarned":"Not yet earned","profile.progressTo":"Progress to","profile.moreContribs":"more contribution","profile.toReach":"to reach",
   "saved.title":"Saved Listings","saved.empty":"Nothing saved yet.","saved.browse":"Browse Directory","saved.subtitle":"Shapers and glassers you've bookmarked.",
   "general.location":"Location","general.country":"Country","general.town":"Town / Location","general.website":"Website","general.instagram":"Instagram","general.cancel":"Cancel","general.select":"Select…",
@@ -445,7 +445,7 @@ function LogoImg({ listing, size = "sm" }) {
 // BADGE DEFINITIONS
 // ─────────────────────────────────────────────
 const BADGE_DEFS = [
-  { id:"founding",    icon:"🌊", label:"Founding Member",   desc:"One of the first 100 people to join Shaper Sheds",             tier:"gold"   },
+  { id:"founding",    icon:"🌊", label:"Founding Member",   desc:"One of the first 100 people to join Shaper Shed",             tier:"gold"   },
   { id:"nominator",   icon:"🪚", label:"Nominator",         desc:"Submitted a shaper who was approved and went live",             tier:"gold"   },
   { id:"reviewer",    icon:"⭐", label:"Trusted Reviewer",  desc:"Written 3 or more approved reviews",                           tier:"silver" },
   { id:"loyal",       icon:"🤙", label:"Loyal",             desc:"Reviewed the same shaper more than once over time",             tier:"silver" },
@@ -522,7 +522,7 @@ function AuthModal({ mode: init, onClose, onAuth }) {
             <button type="submit" className="btn bp fbtn">{tr("auth.createAccount")}</button>
           </form>
           <div style={{ fontSize:11, color:"var(--txm)", marginTop:12, lineHeight:1.6, padding:"0 2px" }}>
-            By joining, you agree to receive occasional updates from Shaper Sheds about new listings, features, and community news. Your details are kept private — never shared with third parties. Unsubscribe any time.
+            By joining, you agree to receive occasional updates from Shaper Shed about new listings, features, and community news. Your details are kept private — never shared with third parties. Unsubscribe any time.
           </div>
           <div className="swlnk">{tr("auth.alreadyMember")} <span onClick={() => setMode("in")}>{tr("auth.signIn")}</span></div>
         </>}
@@ -846,7 +846,7 @@ function HomePage({ listings: allListings, onView }) {
       {/* ══ HERO ══ */}
       <div className="hero-box">
         {heroImage
-          ? <img className="hero-img" src={heroImage} alt="Shaper Sheds hero" />
+          ? <img className="hero-img" src={heroImage} alt="Shaper Shed hero" />
           : <div className="hero-placeholder"><div className="hero-placeholder-icon">🏄</div><span>{tr("hero.uploadHint")}</span></div>
         }
         <div className="hero-overlay" />
@@ -2363,9 +2363,21 @@ export default function App() {
   const [selected,   setSelected]   = useState(null);
   const [toast,      setToast]      = useState(null);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [heroImage,  setHeroImage]  = useState("");
-  const [logoImage,  setLogoImage]  = useState(""); // NEW: site logo
+  const [heroImage,  setHeroImage]  = useState(() => {
+    try { return localStorage.getItem("ss_heroImage") || ""; } catch { return ""; }
+  });
+  const [logoImage,  setLogoImage]  = useState(() => {
+    try { return localStorage.getItem("ss_logoImage") || ""; } catch { return ""; }
+  });
   const [locale,     setLocale]     = useState("en-AU");
+
+  // Persist hero and logo images to localStorage
+  useEffect(() => {
+    try { localStorage.setItem("ss_heroImage", heroImage); } catch {}
+  }, [heroImage]);
+  useEffect(() => {
+    try { localStorage.setItem("ss_logoImage", logoImage); } catch {}
+  }, [logoImage]);
 
   const localeObj = LOCALES.find(l => l.code === locale) || LOCALES[0];
   const tr = key => t(key, locale);
@@ -2401,7 +2413,7 @@ export default function App() {
         <nav className="nav">
           <div className="brand" onClick={() => { setPage("home"); setCat("all"); setSearch(""); }}>
             {logoImage ? (
-              <img src={logoImage} alt="Shaper Sheds" className="brand-logo" />
+              <img src={logoImage} alt="Shaper Shed" className="brand-logo" />
             ) : (
               <svg width="34" height="34" viewBox="0 0 100 100" fill="none">
                 <ellipse cx="50" cy="50" rx="44" ry="44" stroke="#8B6914" strokeWidth="5" fill="none"/>
@@ -2409,7 +2421,7 @@ export default function App() {
                 <line x1="50" y1="16" x2="50" y2="84" stroke="white" strokeWidth="2.5"/>
               </svg>
             )}
-            <div className="brand-text">Shaper Sheds</div>
+            <div className="brand-text">Shaper Shed</div>
           </div>
           <div className="nav-r">
             <LocalePicker locale={locale} setLocale={setLocale} />
