@@ -1,4 +1,61 @@
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import { useState, useEffect, createContext, useContext, useRef, useCallback } from "react";
+
+// ─────────────────────────────────────────────
+// TRANSLATION API
+// ─────────────────────────────────────────────
+const TRANSLATE_API = "/api/translate";
+const translationCache = new Map();
+
+async function translateText(text, targetLocale) {
+  if (!text || targetLocale.startsWith("en")) return text;
+  
+  const cacheKey = `${text}:${targetLocale}`;
+  if (translationCache.has(cacheKey)) return translationCache.get(cacheKey);
+  
+  try {
+    const res = await fetch(TRANSLATE_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, target_locale: targetLocale })
+    });
+    if (!res.ok) return text;
+    const data = await res.json();
+    // Only cache if translation actually changed
+    if (data.translated && data.translated !== text) {
+      translationCache.set(cacheKey, data.translated);
+      return data.translated;
+    }
+    return text;
+  } catch (e) {
+    console.error("Translation error:", e);
+    return text;
+  }
+}
+
+// Custom hook for translating content
+function useTranslatedText(text, locale) {
+  const [translated, setTranslated] = useState(text);
+  
+  useEffect(() => {
+    let cancelled = false;
+    if (locale.startsWith("en")) {
+      setTranslated(text);
+      return;
+    }
+    translateText(text, locale).then(t => {
+      if (!cancelled) setTranslated(t);
+    });
+    return () => { cancelled = true; };
+  }, [text, locale]);
+  
+  return translated;
+}
+
+// Component for translated text
+function TranslatedText({ text, locale }) {
+  const translated = useTranslatedText(text, locale);
+  return <>{translated}</>;
+}
 
 // ─────────────────────────────────────────────
 // ADMIN CONFIG
@@ -734,7 +791,8 @@ function BookmarkIcon({ saved, size = 20 }) {
 // LISTING CARD
 // ─────────────────────────────────────────────
 function Card({ listing, onClick }) {
-  const { tr } = useContext(Ctx);
+  const { tr, locale } = useContext(Ctx);
+  const translatedTagline = useTranslatedText(listing.tagline, locale);
   return (
     <div className={`card ${listing.featured ? "feat" : ""}`} onClick={() => onClick(listing)}>
       {listing.featured && <span className="fbadge">{tr("listing.featured")}</span>}
@@ -742,7 +800,7 @@ function Card({ listing, onClick }) {
         <LogoImg listing={listing} />
         <div className="cinfo">
           <div className="cname">{listing.name}</div>
-          <div className="ctag">{listing.tagline}</div>
+          <div className="ctag">{translatedTagline}</div>
         </div>
       </div>
       <div className="cfoot">
@@ -1270,11 +1328,15 @@ function PremiumLock({ title, description, features }) {
 }
 
 function ListingPage({ listing }) {
-  const { setPage, setCat, user, savedIds, toggleSave, showToast, setModal, categories, setPendingReviews, tr } = useContext(Ctx);
+  const { setPage, setCat, user, savedIds, toggleSave, showToast, setModal, categories, setPendingReviews, tr, locale } = useContext(Ctx);
   const saved = savedIds.includes(listing.id);
   const bm = () => { if (!user) { setModal("in"); return; } toggleSave(listing.id); showToast(saved ? "Removed from saved" : "Saved!"); };
   const isPremium  = listing.premium;
   const hasBoards  = isPremium && listing.boards?.length > 0;
+
+  // Translate dynamic content
+  const translatedTagline = useTranslatedText(listing.tagline, locale);
+  const translatedBio = useTranslatedText(listing.bio, locale);
 
   return (
     <div className="ldp">
@@ -1291,7 +1353,7 @@ function ListingPage({ listing }) {
                 {isPremium && <span className="ld-prem-badge">✦ Premium</span>}
               </div>
               <div className="ld-name">{listing.name}</div>
-              <div className="ld-tagline">{listing.tagline}</div>
+              <div className="ld-tagline">{translatedTagline}</div>
             </div>
             <div className="ld-hright">
               <button className={`ld-save ${saved ? "on" : ""}`} onClick={bm}>
@@ -1329,7 +1391,7 @@ function ListingPage({ listing }) {
       <div className="ld-body">
         <div className="ld-sec">
           <div className="ld-sec-title">About</div>
-          <p className="ld-bio">{listing.bio}</p>
+          <p className="ld-bio">{translatedBio}</p>
           {listing.tags.length > 0 && (
             <div className="ld-tags">
               {listing.tags.map(t => <span key={t} className="ld-tag">{t}</span>)}
