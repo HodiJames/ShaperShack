@@ -2258,12 +2258,40 @@ function AdminPage() {
   const heroRef = useRef();
   const logoRef = useRef();
   const csvRef  = useRef();
+  
+  // Live listings search & filter state
+  const [liveSearch, setLiveSearch] = useState("");
+  const [liveFilters, setLiveFilters] = useState({ type: "", country: "", featured: "", premium: "", category: "" });
+  const [showLiveFilters, setShowLiveFilters] = useState(false);
 
   const approve = item => { setListings(p=>[...p,{...item,approved:true}]); setPending(p=>p.filter(x=>x.id!==item.id)); showToast(`"${item.name}" approved!`); };
   const reject  = item => { setPending(p=>p.filter(x=>x.id!==item.id)); showToast(`"${item.name}" rejected.`); };
   const toggleF = id   => setListings(p=>p.map(l=>l.id===id?{...l,featured:!l.featured}:l));
+  const toggleP = id   => setListings(p=>p.map(l=>l.id===id?{...l,premium:!l.premium}:l));
   const save    = u    => { setListings(p=>p.map(l=>l.id===u.id?u:l)); setEdit(null); showToast("Updated!"); };
   const del     = id   => { if (window.confirm("Delete this listing?")) { setListings(p=>p.filter(l=>l.id!==id)); showToast("Deleted."); } };
+
+  // Filter live listings
+  const filteredListings = listings.filter(l => {
+    const searchMatch = !liveSearch || 
+      l.name.toLowerCase().includes(liveSearch.toLowerCase()) ||
+      (l.tagline||"").toLowerCase().includes(liveSearch.toLowerCase()) ||
+      (l.country||"").toLowerCase().includes(liveSearch.toLowerCase()) ||
+      (l.address||"").toLowerCase().includes(liveSearch.toLowerCase());
+    const typeMatch = !liveFilters.type || l.type === liveFilters.type;
+    const countryMatch = !liveFilters.country || l.country === liveFilters.country;
+    const featuredMatch = !liveFilters.featured || 
+      (liveFilters.featured === "yes" && l.featured) || 
+      (liveFilters.featured === "no" && !l.featured);
+    const premiumMatch = !liveFilters.premium || 
+      (liveFilters.premium === "yes" && l.premium) || 
+      (liveFilters.premium === "no" && !l.premium);
+    const categoryMatch = !liveFilters.category || (l.category||[]).includes(liveFilters.category);
+    return searchMatch && typeMatch && countryMatch && featuredMatch && premiumMatch && categoryMatch;
+  });
+
+  const clearLiveFilters = () => setLiveFilters({ type: "", country: "", featured: "", premium: "", category: "" });
+  const hasActiveFilters = Object.values(liveFilters).some(v => v !== "");
 
   const approveReview = rv => {
     setListings(p=>p.map(l=>l.id===rv.listingId?{...l,reviews:[...(l.reviews||[]),{...rv,approved:true}]}:l));
@@ -2409,23 +2437,104 @@ function AdminPage() {
         </div>
       )}
 
-      {tab==="live" && listings.map(l=>(
-        <div key={l.id} className="acard">
-          <div className="ainfo">
-            <h4><LogoImg listing={l} /><span>{l.name}</span></h4>
-            <p>{l.tagline}</p>
-            <p className="sub">{l.type} · {l.country||"No country"}</p>
-            <div className="togrow" onClick={()=>toggleF(l.id)}>
-              <div className={`tog ${l.featured?"on":""}`} />
-              {l.featured?"Featured (paid)":"Not featured"}
+      {tab==="live" && (
+        <div>
+          {/* Search & Filter Bar */}
+          <div style={{display:"flex", gap:"10px", marginBottom:"16px", flexWrap:"wrap", alignItems:"center"}}>
+            <div style={{flex:"1", minWidth:"200px", position:"relative"}}>
+              <input 
+                className="fi" 
+                placeholder="Search listings..." 
+                value={liveSearch} 
+                onChange={e => setLiveSearch(e.target.value)}
+                style={{paddingLeft:"36px"}}
+              />
+              <span style={{position:"absolute", left:"12px", top:"50%", transform:"translateY(-50%)", color:"var(--txm)"}}>🔍</span>
             </div>
+            <button 
+              className={`btn bo ${hasActiveFilters ? "active" : ""}`} 
+              onClick={() => setShowLiveFilters(!showLiveFilters)}
+              style={{display:"flex", alignItems:"center", gap:"6px"}}
+            >
+              ⚙️ Filters {hasActiveFilters && <span style={{background:"var(--g)", color:"#fff", borderRadius:"10px", padding:"1px 6px", fontSize:"11px"}}>{Object.values(liveFilters).filter(v=>v).length}</span>}
+            </button>
+            {hasActiveFilters && <button className="btn bg" onClick={clearLiveFilters}>Clear</button>}
+            <span style={{fontSize:"13px", color:"var(--txm)"}}>{filteredListings.length} of {listings.length} listings</span>
           </div>
-          <div className="aacts">
-            <button className="btn bsm bed" onClick={()=>setEdit(l)}>✏️ Edit</button>
-            <button className="btn bsm brej" onClick={()=>del(l.id)}>🗑</button>
-          </div>
+
+          {/* Filter Panel */}
+          {showLiveFilters && (
+            <div style={{background:"var(--bg)", border:"1px solid var(--bd)", borderRadius:"12px", padding:"16px 20px", marginBottom:"16px"}}>
+              <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(150px, 1fr))", gap:"12px"}}>
+                <div className="fg" style={{marginBottom:0}}>
+                  <label className="fl">Type</label>
+                  <select className="fs" value={liveFilters.type} onChange={e => setLiveFilters(p=>({...p, type: e.target.value}))}>
+                    <option value="">All Types</option>
+                    {["Shaper","Glasser","Retail","Service","Supplier","Manufacturer","School","Other"].map(t => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div className="fg" style={{marginBottom:0}}>
+                  <label className="fl">Country</label>
+                  <select className="fs" value={liveFilters.country} onChange={e => setLiveFilters(p=>({...p, country: e.target.value}))}>
+                    <option value="">All Countries</option>
+                    {COUNTRIES.filter(c=>c!=="All Countries").map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="fg" style={{marginBottom:0}}>
+                  <label className="fl">Category</label>
+                  <select className="fs" value={liveFilters.category} onChange={e => setLiveFilters(p=>({...p, category: e.target.value}))}>
+                    <option value="">All Categories</option>
+                    {categories.filter(c=>c.id!=="all").map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div className="fg" style={{marginBottom:0}}>
+                  <label className="fl">Featured</label>
+                  <select className="fs" value={liveFilters.featured} onChange={e => setLiveFilters(p=>({...p, featured: e.target.value}))}>
+                    <option value="">All</option>
+                    <option value="yes">Featured Only</option>
+                    <option value="no">Not Featured</option>
+                  </select>
+                </div>
+                <div className="fg" style={{marginBottom:0}}>
+                  <label className="fl">Premium</label>
+                  <select className="fs" value={liveFilters.premium} onChange={e => setLiveFilters(p=>({...p, premium: e.target.value}))}>
+                    <option value="">All</option>
+                    <option value="yes">Premium Only</option>
+                    <option value="no">Not Premium</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Listings */}
+          {filteredListings.length === 0 ? (
+            <div className="empty"><div className="emico">🔍</div><p>No listings match your search/filters.</p></div>
+          ) : filteredListings.map(l=>(
+            <div key={l.id} className="acard">
+              <div className="ainfo">
+                <h4><LogoImg listing={l} /><span>{l.name}</span></h4>
+                <p>{l.tagline}</p>
+                <p className="sub">{l.type} · {l.country||"No country"} {(l.category||[]).length > 0 && `· ${(l.category||[]).slice(0,2).join(", ")}`}</p>
+                <div style={{display:"flex", gap:"16px", flexWrap:"wrap", marginTop:"8px"}}>
+                  <div className="togrow" onClick={()=>toggleF(l.id)}>
+                    <div className={`tog ${l.featured?"on":""}`} />
+                    <span>{l.featured?"⭐ Featured":"Not featured"}</span>
+                  </div>
+                  <div className="togrow" onClick={()=>toggleP(l.id)}>
+                    <div className={`tog ${l.premium?"on":""}`} style={{background: l.premium ? "#8b5cf6" : "var(--bd)"}} />
+                    <span>{l.premium?"💎 Premium":"Not premium"}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="aacts">
+                <button className="btn bsm bed" onClick={()=>setEdit(l)}>✏️ Edit</button>
+                <button className="btn bsm brej" onClick={()=>del(l.id)}>🗑</button>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
       {editTarget && <EditModal listing={editTarget} categories={categories} onSave={save} onClose={()=>setEdit(null)} />}
       {showCM && <CatManagerModal categories={categories} onSave={cats=>{setCategories(cats);showToast("Categories saved!");}} onClose={()=>setShowCM(false)} />}
