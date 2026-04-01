@@ -104,7 +104,7 @@ def hash_password(password: str) -> str:
 def get_user_by_email(email: str):
     return users_collection.find_one({"email": email.lower()}, {"_id": 0})
 
-SUPER_ADMINS = ["admin@shapersheds.com", "hello@shapersheds.com"]
+SUPER_ADMINS = ["admin@shapershed.com", "hello@shapershed.com"]
 
 def is_admin(email: str) -> bool:
     return email.lower() in [e.lower() for e in SUPER_ADMINS]
