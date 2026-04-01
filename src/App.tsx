@@ -1709,7 +1709,21 @@ function KnowledgeGrid({ items }) {
 // ─────────────────────────────────────────────
 // LISTING DETAIL PAGE
 // ─────────────────────────────────────────────
-function PremiumLock({ title, description, features }) {
+function PremiumLock({ title, description, features, listing, onClaim, onUpgrade }) {
+  const { user, setModal } = useContext(Ctx);
+  const isClaimed = listing?.claimed;
+  const isOwner = user && listing?.ownerEmail === user.email;
+
+  const handleAction = () => {
+    if (!user) {
+      setModal("in");
+    } else if (!isClaimed) {
+      onClaim && onClaim();
+    } else if (isOwner) {
+      onUpgrade && onUpgrade();
+    }
+  };
+
   return (
     <div className="ld-lock">
       <div className="ld-lock-icon">🔒</div>
@@ -1721,9 +1735,34 @@ function PremiumLock({ title, description, features }) {
       <div className="ld-lock-blur">
         The River Pig · 7'0"–7'6" · 2+1 fins · $1,100 &nbsp;·&nbsp; The Dagger · 5'10"–6'2" · Thruster · $950
       </div>
-      <p style={{ fontSize: 13, color: "var(--txm)", marginTop: 12, maxWidth: 360, lineHeight: 1.6 }}>
-        This content is available when <strong>the shaper</strong> upgrades to a Premium listing.
-      </p>
+      
+      {/* Claim / Upgrade Actions */}
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        {!isClaimed ? (
+          <>
+            <p style={{ fontSize: 13, color: "var(--txm)", marginBottom: 12 }}>
+              <strong>Is this your business?</strong> Claim this listing to unlock premium features.
+            </p>
+            <button className="btn bp" onClick={handleAction}>
+              {user ? "Claim This Listing" : "Sign In to Claim"}
+            </button>
+          </>
+        ) : isOwner ? (
+          <>
+            <p style={{ fontSize: 13, color: "var(--txm)", marginBottom: 12 }}>
+              Upgrade to Premium to showcase your work and connect with surfers.
+            </p>
+            <button className="btn" style={{background:"#8b5cf6", color:"#fff", border:"none"}} onClick={handleAction}>
+              Start 7-Day Free Trial
+            </button>
+            <p style={{ fontSize: 11, color: "var(--txm)", marginTop: 8 }}>Then $39/month · Cancel anytime</p>
+          </>
+        ) : (
+          <p style={{ fontSize: 13, color: "var(--txm)", marginTop: 12, maxWidth: 360, lineHeight: 1.6 }}>
+            This content is available when <strong>the shaper</strong> upgrades to a Premium listing.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -1787,36 +1826,6 @@ function ListingPage({ listing }) {
         </div>
       </div>
 
-      {/* Claim / Premium Upgrade Section */}
-      {!isClaimed && !isPremium && (
-        <div style={{background:"linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border:"1px solid #0ea5e9", borderRadius:"12px", padding:"20px", margin:"0 0 24px 0"}}>
-          <h3 style={{margin:"0 0 8px 0", color:"#0369a1"}}>Is this your business?</h3>
-          <p style={{margin:"0 0 16px 0", color:"#0c4a6e", fontSize:"14px"}}>Claim this listing to manage your profile, respond to reviews, and unlock premium features.</p>
-          <button className="btn bp" onClick={() => user ? setShowClaimModal(true) : setModal("in")}>Claim This Listing</button>
-        </div>
-      )}
-
-      {isClaimed && isOwner && !isPremium && (
-        <div style={{background:"linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)", border:"1px solid #a855f7", borderRadius:"12px", padding:"20px", margin:"0 0 24px 0"}}>
-          <div style={{display:"flex", alignItems:"center", gap:"8px", marginBottom:"8px"}}>
-            <span style={{fontSize:"24px"}}>💎</span>
-            <h3 style={{margin:0, color:"#7c3aed"}}>Upgrade to Premium</h3>
-          </div>
-          <p style={{margin:"0 0 12px 0", color:"#5b21b6", fontSize:"14px"}}>Showcase your craft and connect with surfers worldwide.</p>
-          <ul style={{margin:"0 0 16px 0", paddingLeft:"20px", color:"#6b21a8", fontSize:"13px"}}>
-            <li><strong>Watch This Shaper at Work</strong> - Link YouTube videos of you shaping</li>
-            <li><strong>Shaping Knowledge</strong> - Share videos about board design features</li>
-            <li><strong>Portfolio</strong> - Showcase boards you make with photos & descriptions</li>
-          </ul>
-          <div style={{display:"flex", gap:"12px", alignItems:"center", flexWrap:"wrap"}}>
-            <button className="btn" style={{background:"#8b5cf6", color:"#fff", border:"none"}} onClick={() => setShowPremiumModal(true)}>
-              Start 7-Day Free Trial
-            </button>
-            <span style={{fontSize:"13px", color:"#7c3aed"}}>Then $39/month • Cancel anytime</span>
-          </div>
-        </div>
-      )}
-
       {showClaimModal && <ClaimModal listing={listing} onClose={() => setShowClaimModal(false)} onSuccess={() => { setShowClaimModal(false); showToast("Claim submitted! We'll be in touch."); }} />}
       {showPremiumModal && <PremiumModal listing={listing} onClose={() => setShowPremiumModal(false)} />}
 
@@ -1870,6 +1879,9 @@ function ListingPage({ listing }) {
             title="Watch this shaper at work"
             description="When the shaper upgrades to Premium, they can embed a video — watch their full shaping process, hear their philosophy, and get a feel for who they are before you order a board."
             features={["1 embedded YouTube video","Shaping process","Brand story","Build confidence before you buy"]}
+            listing={listing}
+            onClaim={() => setShowClaimModal(true)}
+            onUpgrade={() => setShowPremiumModal(true)}
           />
         )}
 
@@ -1888,6 +1900,9 @@ function ListingPage({ listing }) {
             title="Shaping Knowledge — how they think"
             description="When the shaper upgrades to Premium, they can share their philosophy on rocker, concave, tail shapes, outlines and more."
             features={["Rocker explained","Concave philosophy","Tail & outline thinking","Why it matters for your surfing"]}
+            listing={listing}
+            onClaim={() => setShowClaimModal(true)}
+            onUpgrade={() => setShowPremiumModal(true)}
           />
         )}
 
@@ -1925,6 +1940,9 @@ function ListingPage({ listing }) {
             title="Board Portfolio — every shape, explained"
             description="When the shaper upgrades to Premium, they can showcase their full range with individual board cards — dimensions, fin setup, ideal conditions, and pricing."
             features={["Full board catalogue","Dimensions & fins","Who each board suits","Custom order pricing"]}
+            listing={listing}
+            onClaim={() => setShowClaimModal(true)}
+            onUpgrade={() => setShowPremiumModal(true)}
           />
         )}
       </div>
