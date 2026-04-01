@@ -643,7 +643,14 @@ function AuthModal({ mode: init, onClose, onAuth }) {
 // ─────────────────────────────────────────────
 function EditModal({ listing, categories, onSave, onClose }) {
   const { tr } = useContext(Ctx);
-  const [f, setF] = useState({ ...listing, category: [...listing.category], tags: listing.tags.join(",") });
+  const [f, setF] = useState({ 
+    ...listing, 
+    category: [...(listing.category || [])], 
+    tags: (listing.tags || []).join(","),
+    videos: listing.videos || [],
+    boards: listing.boards || [],
+    knowledge: listing.knowledge || []
+  });
   const h = (k, v) => setF(p => ({ ...p, [k]: v }));
   const ref = useRef();
   const pickLogo = e => { const file = e.target.files[0]; if (!file) return; const r = new FileReader(); r.onload = ev => h("logoUrl", ev.target.result); r.readAsDataURL(file); };
@@ -658,6 +665,33 @@ function EditModal({ listing, categories, onSave, onClose }) {
       return p;
     });
   };
+  
+  // Premium content management
+  const addVideo = () => {
+    const url = prompt("Enter YouTube video URL:");
+    if (url) {
+      const title = prompt("Video title (optional):");
+      setF(p => ({ ...p, videos: [...(p.videos || []), { url, title: title || "Video" }] }));
+    }
+  };
+  const removeVideo = idx => setF(p => ({ ...p, videos: p.videos.filter((_, i) => i !== idx) }));
+  
+  const addBoard = () => {
+    setF(p => ({ ...p, boards: [...(p.boards || []), { name: "New Board", type: "Shortboard", price: "" }] }));
+  };
+  const updateBoard = (idx, field, value) => {
+    setF(p => ({ ...p, boards: p.boards.map((b, i) => i === idx ? { ...b, [field]: value } : b) }));
+  };
+  const removeBoard = idx => setF(p => ({ ...p, boards: p.boards.filter((_, i) => i !== idx) }));
+  
+  const addKnowledge = () => {
+    setF(p => ({ ...p, knowledge: [...(p.knowledge || []), { topic: "New Topic", icon: "📝", content: "" }] }));
+  };
+  const updateKnowledge = (idx, field, value) => {
+    setF(p => ({ ...p, knowledge: p.knowledge.map((k, i) => i === idx ? { ...k, [field]: value } : k) }));
+  };
+  const removeKnowledge = idx => setF(p => ({ ...p, knowledge: p.knowledge.filter((_, i) => i !== idx) }));
+  
   const sub = e => { e.preventDefault(); onSave({ ...f, category: f.category, tags: f.tags.split(",").map(s => s.trim()) }); };
   return (
     <div className="ov" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -726,6 +760,62 @@ function EditModal({ listing, categories, onSave, onClose }) {
               <div className="fg"><label className="fl">Brand colour</label><input type="color" className="fi" value={f.logoColor} onChange={e => h("logoColor", e.target.value)} style={{ height: 38 }} /></div>
             </div>
           </div>
+          
+          {f.premium && (
+            <>
+              <div className="fsec">
+                <h4>💎 Premium: Videos</h4>
+                <p style={{fontSize:"12px",color:"var(--txm)",marginBottom:"12px"}}>Add YouTube videos to showcase this shaper's work.</p>
+                {(f.videos || []).map((v, i) => (
+                  <div key={i} style={{display:"flex",gap:"8px",marginBottom:"8px",alignItems:"center"}}>
+                    <input className="fi" value={v.title || ""} placeholder="Title" style={{flex:"1"}} onChange={e => setF(p => ({ ...p, videos: p.videos.map((vid, idx) => idx === i ? { ...vid, title: e.target.value } : vid) }))} />
+                    <input className="fi" value={v.url || ""} placeholder="YouTube URL" style={{flex:"2"}} onChange={e => setF(p => ({ ...p, videos: p.videos.map((vid, idx) => idx === i ? { ...vid, url: e.target.value } : vid) }))} />
+                    <button type="button" className="btn bsm brej" onClick={() => removeVideo(i)}>✕</button>
+                  </div>
+                ))}
+                <button type="button" className="btn bo bsm" onClick={addVideo}>+ Add Video</button>
+              </div>
+              
+              <div className="fsec">
+                <h4>💎 Premium: Boards / Models</h4>
+                <p style={{fontSize:"12px",color:"var(--txm)",marginBottom:"12px"}}>Add boards that this shaper makes.</p>
+                {(f.boards || []).map((b, i) => (
+                  <div key={i} style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:"8px",padding:"12px",marginBottom:"8px"}}>
+                    <div className="f2" style={{marginBottom:"8px"}}>
+                      <input className="fi" value={b.name || ""} placeholder="Board name" onChange={e => updateBoard(i, "name", e.target.value)} />
+                      <select className="fs" value={b.type || "Shortboard"} onChange={e => updateBoard(i, "type", e.target.value)}>
+                        {["Shortboard","Longboard","Fish","Midlength","Gun","Hybrid","Twin Fin","Single Fin","Step-up","Foamie","Other"].map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="f2">
+                      <input className="fi" value={b.price || ""} placeholder="Price (e.g. $850)" onChange={e => updateBoard(i, "price", e.target.value)} />
+                      <input className="fi" value={b.dims || ""} placeholder="Dims (e.g. 5'10 x 19 x 2.4)" onChange={e => updateBoard(i, "dims", e.target.value)} />
+                    </div>
+                    <textarea className="ft" rows={2} value={b.desc || ""} placeholder="Description..." style={{marginTop:"8px"}} onChange={e => updateBoard(i, "desc", e.target.value)} />
+                    <button type="button" className="btn bsm brej" style={{marginTop:"8px"}} onClick={() => removeBoard(i)}>Remove Board</button>
+                  </div>
+                ))}
+                <button type="button" className="btn bo bsm" onClick={addBoard}>+ Add Board</button>
+              </div>
+              
+              <div className="fsec">
+                <h4>💎 Premium: Knowledge Base</h4>
+                <p style={{fontSize:"12px",color:"var(--txm)",marginBottom:"12px"}}>Add topics that explain this shaper's philosophy, techniques, etc.</p>
+                {(f.knowledge || []).map((k, i) => (
+                  <div key={i} style={{background:"var(--bg)",border:"1px solid var(--bd)",borderRadius:"8px",padding:"12px",marginBottom:"8px"}}>
+                    <div className="f2" style={{marginBottom:"8px"}}>
+                      <input className="fi" value={k.icon || "📝"} placeholder="Icon" style={{maxWidth:"60px"}} onChange={e => updateKnowledge(i, "icon", e.target.value)} />
+                      <input className="fi" value={k.topic || ""} placeholder="Topic title" onChange={e => updateKnowledge(i, "topic", e.target.value)} />
+                    </div>
+                    <textarea className="ft" rows={3} value={k.content || ""} placeholder="Content..." onChange={e => updateKnowledge(i, "content", e.target.value)} />
+                    <button type="button" className="btn bsm brej" style={{marginTop:"8px"}} onClick={() => removeKnowledge(i)}>Remove Topic</button>
+                  </div>
+                ))}
+                <button type="button" className="btn bo bsm" onClick={addKnowledge}>+ Add Knowledge Topic</button>
+              </div>
+            </>
+          )}
+          
           <button type="submit" className="btn bp" style={{ width: "100%", marginTop: 16, justifyContent: "center" }}>Save Changes</button>
         </form>
       </div>
@@ -2368,12 +2458,13 @@ function AnalyticsTab({ listings }) {
 
 function AdminPage() {
   const { pending, setPending, listings, setListings, showToast, categories, setCategories, heroImage, setHeroImage, logoImage, setLogoImage, pendingReviews, setPendingReviews } = useContext(Ctx);
-  const [tab, setTab]         = useState("pending");
+  const [tab, setTab]         = useState("live");
   const [editTarget, setEdit] = useState(null);
   const [showCM, setShowCM]   = useState(false);
   const [heroDrag, setHeroDrag] = useState(false);
   const [logoDrag, setLogoDrag] = useState(false);
   const [pendingQuestions, setPendingQuestions] = useState([]);
+  const [impersonating, setImpersonating] = useState(null); // For impersonating premium users
   const heroRef = useRef();
   const logoRef = useRef();
   const csvRef  = useRef();
@@ -2535,15 +2626,12 @@ function AdminPage() {
   return (
     <div className="adp">
       <h1>Admin Panel</h1>
-      <p className="addesc">Manage listings, submissions, reviews, analytics, and site content.</p>
+      <p className="addesc">Manage listings, questions, and site content.</p>
       <div className="atabs">
         {[
-          ["pending",  `Pending (${pending.length})`],
-          ["reviews",  `Reviews (${pendingReviews.length})`],
-          ["live",     `Live (${listings.length})`],
+          ["live",     `Listings (${listings.length})`],
           ["questions", `Questions (${pendingQuestions.length})`],
-          ["analytics","📊 Analytics"],
-          ["hero",     "Hero Image"],
+          ["hero",     "Site Settings"],
         ].map(([t,l]) => (
           <button key={t} className={`atab ${tab===t?"on":""}`} onClick={()=>setTab(t)}>{l}</button>
         ))}
@@ -2763,6 +2851,9 @@ function AdminPage() {
                 </div>
               </div>
               <div className="aacts">
+                {l.premium && (
+                  <button className="btn bsm" style={{background:"#8b5cf6",color:"#fff",border:"1px solid #8b5cf6"}} onClick={()=>{setImpersonating(l);setEdit(l);}}>👤 Manage as Premium</button>
+                )}
                 <button className="btn bsm bed" onClick={()=>setEdit(l)}>✏️ Edit</button>
                 <button className="btn bsm brej" onClick={()=>del(l.id)}>🗑</button>
               </div>
