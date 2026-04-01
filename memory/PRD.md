@@ -32,7 +32,11 @@
 ## What's Been Implemented
 
 ### April 1, 2026
-- ✅ **Fixed PremiumLock button click issue** - Added `pointer-events: none;` to `.ld-lock::before` pseudo-element that was blocking button clicks
+- ✅ **Fixed PremiumLock button click issue** - Added `pointer-events: none;` to `.ld-lock::before` pseudo-element
+- ✅ **Added "My Listings" tab to Profile** - Users can see and manage their claimed listings
+- ✅ **Created PremiumEditPage** - Premium owners can add videos, knowledge articles, and board portfolio
+- ✅ **Enhanced ListingPage** - Shows user-added premium content (videos, knowledge, boards)
+- ✅ **Owner Edit Button** - Premium listing owners see "Edit Content" button on their listing
 
 ### Previous Session
 - ✅ **MongoDB Atlas integration** - Bookmarks, listings, questions persist across sessions
@@ -45,29 +49,48 @@
 - ✅ **Translation caching** - Translations stored for persistence
 - ✅ **Firebase config** - Firebase SDK installed (not fully wired)
 
+## Premium Flow (Complete)
+
+### Step 1: Claim Listing
+1. User clicks "Unlock Premium Features" on any listing
+2. ClaimModal opens → user fills contact info
+3. Claim saved to DB with status "pending"
+4. Admin reviews in Admin Panel → Claims tab
+5. Admin approves → listing marked `claimed: true`, `ownerEmail` set
+
+### Step 2: Access from "My Listings"
+1. Owner logs in → Profile → "💎 My Listings" tab
+2. Shows claimed listings with actions:
+   - View Listing
+   - Upgrade to Premium / Edit Premium Content
+
+### Step 3: Upgrade to Premium
+1. Owner clicks "Start 7-Day Free Trial"
+2. Listing marked `premium: true, premiumTrial: true`
+3. After trial → Stripe checkout ($39/mo)
+
+### Step 4: Edit Premium Content
+Premium owners can add via PremiumEditPage:
+- 🎬 YouTube videos (Watch This Shaper at Work)
+- 📚 Shaping Knowledge (topics with descriptions)
+- 🏄 Board Portfolio (specs, pricing)
+
 ### API Endpoints
-- POST /api/auth/register - User registration
-- POST /api/auth/login - User login
-- GET /api/bookmarks/{email} - Get user's bookmarks
-- POST /api/bookmarks/{email}/toggle - Toggle bookmark
-- GET /api/listings - Get all shapers
-- POST /api/listings - Create/update single listing
-- POST /api/listings/bulk - Bulk import listings (CSV)
-- PUT /api/listings/{id} - Update listing
-- DELETE /api/listings/{id} - Delete listing
-- POST /api/translate - Translate text with caching
-- GET /api/questions - Get questions for a shaper
-- POST /api/questions - Submit question
-- POST /api/questions/{qid}/vote - Vote on question
-- POST /api/questions/{qid}/status - Approve/reject question (admin)
-- GET /api/claims - Get claims list
-- POST /api/claims - Submit claim
+- POST /api/auth/register, POST /api/auth/login
+- GET /api/bookmarks/{email}, POST /api/bookmarks/{email}/toggle
+- GET /api/listings, POST /api/listings, POST /api/listings/bulk
+- PUT /api/listings/{id}, DELETE /api/listings/{id}
+- POST /api/translate
+- GET /api/questions, POST /api/questions, POST /api/questions/{qid}/vote
+- GET /api/claims, POST /api/claims
+- PUT /api/claims/{listing_id}/approve, PUT /api/claims/{listing_id}/reject
+- POST /api/premium/start-trial, POST /api/premium/checkout, GET /api/premium/status/{session_id}
 
 ## Prioritized Backlog
 
 ### P0 - Critical (Awaiting Keys)
-- [ ] Stripe Integration for Premium Subscriptions (backend stubs exist, needs STRIPE_API_KEY)
-- [ ] Firebase Video Upload Integration (config provided, needs wiring)
+- [ ] Stripe Integration activation (backend stubs exist, needs STRIPE_API_KEY in Railway)
+- [ ] Firebase Video Upload Integration (config provided, needs full wiring)
 
 ### P1 - Important
 - [ ] Forgot Password flow - Backend email reset + frontend modal
@@ -95,6 +118,6 @@
 - Admin: admin@shapershed.com / admin123
 
 ## Next Tasks
-1. Wire up Firebase Video Upload in Premium Edit Modal
-2. Complete Stripe checkout flow when API key provided
+1. Complete Stripe checkout flow when API key provided
+2. Wire up Firebase Video Upload in Premium Edit Modal
 3. Implement Forgot Password email reset flow
