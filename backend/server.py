@@ -1,4 +1,5 @@
 import os
+import json
 import hashlib
 from datetime import datetime, timezone, timedelta
 from fastapi import FastAPI, HTTPException, Body, Request
@@ -471,7 +472,7 @@ async def reject_claim(listing_id: int):
 @app.post("/api/premium/checkout")
 async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(...)):
     """Create a Stripe checkout session for premium subscription"""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+    import stripe
     
     listing_id = data.get("listingId")
     email = data.get("email")
@@ -481,125 +482,141 @@ async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(
         raise HTTPException(status_code=400, detail="Missing listingId or email")
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
+    if not api_key or api_key == "sk_test_emergent":
+        raise HTTPException(status_code=503, detail="Stripe payments not configured yet. Please use the free trial.")
     
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    stripe.api_key = api_key
     
     success_url = f"{origin_url}/premium-success?session_id={{CHECKOUT_SESSION_ID}}&listing_id={listing_id}"
     cancel_url = f"{origin_url}/listing/{listing_id}"
     
-    checkout_request = CheckoutSessionRequest(
-        amount=PREMIUM_PRICE,
-        currency="usd",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "listing_id": str(listing_id),
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": int(PREMIUM_PRICE * 100),  # Stripe uses cents
+                    "product_data": {
+                        "name": "Shaper Shed Premium",
+                        "description": "Monthly premium subscription"
+                    },
+                    "recurring": {"interval": "month"}
+                },
+                "quantity": 1
+            }],
+            mode="subscription",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            customer_email=email,
+            metadata={
+                "listing_id": str(listing_id),
+                "email": email,
+                "type": "premium_subscription"
+            }
+        )
+        
+        # Create pending transaction record
+        now = datetime.now(timezone.utc).isoformat()
+        payment_transactions_collection.insert_one({
+            "sessionId": session.id,
+            "listingId": listing_id,
             "email": email,
-            "type": "premium_subscription"
-        }
-    )
-    
-    session = await stripe_checkout.create_checkout_session(checkout_request)
-    
-    # Create pending transaction record
-    now = datetime.now(timezone.utc).isoformat()
-    payment_transactions_collection.insert_one({
-        "sessionId": session.session_id,
-        "listingId": listing_id,
-        "email": email,
-        "amount": PREMIUM_PRICE,
-        "currency": "usd",
-        "status": "pending",
-        "paymentStatus": "pending",
-        "createdAt": now
-    })
-    
-    return {"url": session.url, "sessionId": session.session_id}
+            "amount": PREMIUM_PRICE,
+            "currency": "usd",
+            "status": "pending",
+            "paymentStatus": "pending",
+            "createdAt": now
+        })
+        
+        return {"url": session.url, "sessionId": session.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/premium/status/{session_id}")
 async def get_premium_status(request: Request, session_id: str):
     """Check the status of a premium checkout session"""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    import stripe
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
+    if not api_key or api_key == "sk_test_emergent":
+        raise HTTPException(status_code=503, detail="Stripe not configured")
     
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    stripe.api_key = api_key
     
-    status = await stripe_checkout.get_checkout_status(session_id)
-    
-    # Update transaction record
-    if status.payment_status == "paid":
-        # Check if already processed
-        transaction = payment_transactions_collection.find_one({"sessionId": session_id})
-        if transaction and transaction.get("status") != "completed":
-            now = datetime.now(timezone.utc).isoformat()
-            
-            # Update transaction
-            payment_transactions_collection.update_one(
-                {"sessionId": session_id},
-                {"$set": {"status": "completed", "paymentStatus": "paid", "completedAt": now}}
-            )
-            
-            # Activate premium with 7-day trial consideration
-            listing_id = int(status.metadata.get("listing_id", 0))
-            if listing_id:
-                trial_end = datetime.now(timezone.utc)
-                # First month starts after trial
-                subscriptions_collection.update_one(
-                    {"listingId": listing_id},
-                    {"$set": {
-                        "listingId": listing_id,
-                        "email": status.metadata.get("email"),
-                        "status": "active",
-                        "startedAt": now,
-                        "currentPeriodEnd": (trial_end + timedelta(days=30)).isoformat()
-                    }},
-                    upsert=True
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        # Update transaction record
+        if session.payment_status == "paid":
+            transaction = payment_transactions_collection.find_one({"sessionId": session_id})
+            if transaction and transaction.get("status") != "completed":
+                now = datetime.now(timezone.utc).isoformat()
+                
+                payment_transactions_collection.update_one(
+                    {"sessionId": session_id},
+                    {"$set": {"status": "completed", "paymentStatus": "paid", "completedAt": now}}
                 )
                 
-                # Mark listing as premium
-                listings_collection.update_one(
-                    {"id": listing_id},
-                    {"$set": {"premium": True, "premiumSince": now}}
-                )
-    
-    return {
-        "status": status.status,
-        "paymentStatus": status.payment_status,
-        "amount": status.amount_total,
-        "metadata": status.metadata
-    }
+                listing_id = int(session.metadata.get("listing_id", 0))
+                if listing_id:
+                    subscriptions_collection.update_one(
+                        {"listingId": listing_id},
+                        {"$set": {
+                            "listingId": listing_id,
+                            "email": session.metadata.get("email"),
+                            "status": "active",
+                            "startedAt": now,
+                            "currentPeriodEnd": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                        }},
+                        upsert=True
+                    )
+                    
+                    listings_collection.update_one(
+                        {"id": listing_id},
+                        {"$set": {"premium": True, "premiumSince": now}}
+                    )
+        
+        return {
+            "status": session.status,
+            "paymentStatus": session.payment_status,
+            "amount": session.amount_total,
+            "metadata": dict(session.metadata) if session.metadata else {}
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events"""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    import stripe
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}/api/webhook/stripe"
+    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    if not api_key or api_key == "sk_test_emergent":
+        return {"received": True, "note": "Stripe not configured"}
     
+    stripe.api_key = api_key
     body = await request.body()
     signature = request.headers.get("Stripe-Signature", "")
     
     try:
-        event = await stripe_checkout.handle_webhook(body, signature)
+        if webhook_secret:
+            event = stripe.Webhook.construct_event(body, signature, webhook_secret)
+        else:
+            event = stripe.Event.construct_from(json.loads(body), stripe.api_key)
         
-        if event.payment_status == "paid":
-            # Process successful payment
-            listing_id = int(event.metadata.get("listing_id", 0))
-            if listing_id:
-                now = datetime.now(timezone.utc).isoformat()
-                listings_collection.update_one(
-                    {"id": listing_id},
-                    {"$set": {"premium": True, "premiumSince": now}}
-                )
+        if event.type == "checkout.session.completed":
+            session = event.data.object
+            if session.payment_status == "paid":
+                listing_id = int(session.metadata.get("listing_id", 0))
+                if listing_id:
+                    now = datetime.now(timezone.utc).isoformat()
+                    listings_collection.update_one(
+                        {"id": listing_id},
+                        {"$set": {"premium": True, "premiumSince": now}}
+                    )
         
         return {"received": True}
     except Exception as e:
