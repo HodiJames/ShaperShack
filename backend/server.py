@@ -24,7 +24,17 @@ app.add_middleware(
 # MongoDB connection
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 DB_NAME = os.environ.get("DB_NAME", "shaper_shed")
-client = MongoClient(MONGO_URL)
+
+try:
+    client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=5000)
+    # Test connection
+    client.admin.command('ping')
+    print(f"✓ MongoDB connected successfully to {DB_NAME}")
+except Exception as e:
+    print(f"✗ MongoDB connection failed: {e}")
+    # Continue anyway - will fail on first DB access
+    client = MongoClient(MONGO_URL)
+
 db = client[DB_NAME]
 
 # Collections
@@ -973,6 +983,22 @@ async def delete_video(email: str, video_path: str):
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+@app.get("/api/debug")
+async def debug_check():
+    """Debug endpoint to check environment and DB connection"""
+    try:
+        count = listings_collection.count_documents({})
+        db_status = f"connected - {count} listings"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    return {
+        "status": "ok",
+        "db_name": DB_NAME,
+        "mongo_url_set": bool(os.environ.get("MONGO_URL")),
+        "db_status": db_status
+    }
 
 @app.post("/api/translate", response_model=TranslateResponse)
 async def translate(req: TranslateRequest):
