@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Force rebuild - timestamp 20260401-1648
+# Force rebuild - timestamp 20260401-1805
 WORKDIR /app
 
 # Upgrade pip first
