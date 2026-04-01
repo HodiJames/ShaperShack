@@ -6,10 +6,11 @@ from fastapi import FastAPI, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Any, Dict
-from dotenv import load_dotenv
 from pymongo import MongoClient
 
-load_dotenv()
+# Don't use load_dotenv in production - rely on environment variables directly
+# from dotenv import load_dotenv
+# load_dotenv()
 
 app = FastAPI()
 
