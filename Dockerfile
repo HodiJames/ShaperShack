@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Force rebuild v2
+# Force rebuild - timestamp 20260401-1645
 WORKDIR /app
 
 # Upgrade pip first
@@ -10,6 +10,7 @@ RUN pip install --upgrade pip
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ -r requirements.txt
 
+# Force copy of latest backend code
 COPY backend/ ./backend/
 
 # Railway injects PORT env var at runtime, default to 8001
