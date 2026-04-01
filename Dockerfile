@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Force rebuild - timestamp 20260401-1805
+# Force rebuild - timestamp 20260401-1817
 WORKDIR /app
 
 # Upgrade pip first
@@ -17,5 +17,5 @@ COPY backend/ ./backend/
 ENV PORT=8001
 ENV PYTHONUNBUFFERED=1
 
-# Use shell form with unbuffered Python output
-CMD /bin/sh -c "python -u -m uvicorn backend.server:app --host 0.0.0.0 --port ${PORT}"
+# Use shell form with unbuffered Python output and Railway-optimized timeouts
+CMD /bin/sh -c "python -u -m uvicorn backend.server:app --host 0.0.0.0 --port ${PORT} --timeout-keep-alive 65 --log-level info"
