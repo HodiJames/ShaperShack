@@ -2039,8 +2039,8 @@ function ListingPage({ listing }) {
                       <div className="ld-board-price">{b.price}</div>
                     </div>
                   )}
-                  {listing.website && (
-                    <TrackedLink href={listing.website} listingId={listing.id} listingName={listing.name} label={`${b.name} board link`} type="board_link" className="ld-board-link">
+                  {b.url && (
+                    <TrackedLink href={b.url} listingId={listing.id} listingName={listing.name} label={`${b.name} board link`} type="board_link" className="ld-board-link">
                       View {b.name} ↗
                     </TrackedLink>
                   )}
@@ -2732,7 +2732,7 @@ function PremiumEditPage() {
   // Knowledge input state
   const [newKnowledge, setNewKnowledge] = useState({ topic: "", description: "", videoUrl: "" });
   // Board input state  
-  const [newBoard, setNewBoard] = useState({ name: "", type: "", length: "", fins: "", price: "", description: "" });
+  const [newBoard, setNewBoard] = useState({ name: "", type: "", length: "", fins: "", price: "", description: "", url: "" });
 
   if (!user || !selected || selected.ownerEmail !== user.email) {
     return (
@@ -2781,7 +2781,7 @@ function PremiumEditPage() {
   const addBoard = () => {
     if (!newBoard.name.trim()) return;
     setForm(f => ({ ...f, boards: [...f.boards, { ...newBoard, id: Date.now() }] }));
-    setNewBoard({ name: "", type: "", length: "", fins: "", price: "", description: "" });
+    setNewBoard({ name: "", type: "", length: "", fins: "", price: "", description: "", url: "" });
   };
 
   const removeBoard = (id) => {
@@ -2936,6 +2936,7 @@ function PremiumEditPage() {
                 </div>
                 {b.description && <div style={{ fontSize: 13, color: "var(--tx2)", marginTop: 8 }}>{b.description}</div>}
                 {b.price && <div style={{ fontSize: 15, fontWeight: 600, color: "var(--g)", marginTop: 8 }}>{b.price}</div>}
+                {b.url && <a href={b.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "var(--g)", marginTop: 6, display: "block" }}>🔗 {b.url}</a>}
               </div>
             ))}
           </div>
@@ -2949,6 +2950,7 @@ function PremiumEditPage() {
             <input className="fi" placeholder="Fin Setup (e.g., Twin, Thruster)" value={newBoard.fins} onChange={e => setNewBoard(p => ({ ...p, fins: e.target.value }))} />
           </div>
           <textarea className="ft" placeholder="Board description..." value={newBoard.description} onChange={e => setNewBoard(p => ({ ...p, description: e.target.value }))} rows={2} style={{ marginBottom: 10 }} />
+          <input className="fi" placeholder="Board URL (link to your website)" value={newBoard.url} onChange={e => setNewBoard(p => ({ ...p, url: e.target.value }))} style={{ marginBottom: 10 }} />
           <div style={{ display: "flex", gap: 10 }}>
             <input className="fi" placeholder="Price (e.g., $1,200)" value={newBoard.price} onChange={e => setNewBoard(p => ({ ...p, price: e.target.value }))} style={{ flex: 1 }} />
             <button className="btn bp bsm" onClick={addBoard}>+ Add Board</button>
