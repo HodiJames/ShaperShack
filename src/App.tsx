@@ -1741,10 +1741,10 @@ function PremiumLock({ title, description, features, listing, onClaim, onUpgrade
         {!isClaimed ? (
           <>
             <p style={{ fontSize: 13, color: "var(--txm)", marginBottom: 12 }}>
-              <strong>Is this your business?</strong> Claim this listing to unlock premium features.
+              <strong>Is this your business?</strong> Unlock premium features to showcase your work.
             </p>
             <button className="btn bp" onClick={handleAction}>
-              {user ? "Claim This Listing" : "Sign In to Claim"}
+              {user ? "Unlock Premium Features" : "Sign In to Unlock"}
             </button>
           </>
         ) : isOwner ? (
