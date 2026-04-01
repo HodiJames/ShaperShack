@@ -38,6 +38,7 @@ settings_collection = db["settings"]
 claims_collection = db["claims"]
 subscriptions_collection = db["subscriptions"]
 payment_transactions_collection = db["payment_transactions"]
+quiver_collection = db["quiver"]  # User board collections with photos
 
 # Premium pricing
 PREMIUM_PRICE = 39.00  # $39/month
@@ -401,6 +402,61 @@ async def update_settings(data: Dict[str, Any] = Body(...)):
         upsert=True
     )
     return {"success": True}
+
+# ──────────────────────────────────────────────
+# QUIVER / USER BOARDS ENDPOINTS
+# ──────────────────────────────────────────────
+
+@app.get("/api/quiver/{email}")
+async def get_user_quiver(email: str):
+    """Get a user's quiver (board collection)"""
+    boards = list(quiver_collection.find({"userEmail": email}, {"_id": 0}))
+    return boards
+
+@app.post("/api/quiver/{email}")
+async def save_user_quiver(email: str, data: Dict[str, Any] = Body(...)):
+    """Save/update a user's board in their quiver"""
+    board = data.get("board", {})
+    board["userEmail"] = email
+    board["updatedAt"] = datetime.now(timezone.utc).isoformat()
+    
+    if board.get("id"):
+        quiver_collection.update_one(
+            {"id": board["id"], "userEmail": email},
+            {"$set": board},
+            upsert=True
+        )
+    return {"success": True, "board": board}
+
+@app.delete("/api/quiver/{email}/{board_id}")
+async def delete_user_board(email: str, board_id: int):
+    """Delete a board from user's quiver"""
+    quiver_collection.delete_one({"id": board_id, "userEmail": email})
+    return {"success": True}
+
+@app.get("/api/surfer-photos/{shaper_id}")
+async def get_surfer_photos_by_shaper(shaper_id: int):
+    """Get all user photos for boards made by a specific shaper"""
+    # Find all boards linked to this shaper that have photos
+    boards = list(quiver_collection.find(
+        {"shaperId": shaper_id, "photos": {"$exists": True, "$ne": []}},
+        {"_id": 0}
+    ))
+    
+    # Flatten photos with board context
+    photos = []
+    for board in boards:
+        for photo in board.get("photos", []):
+            photos.append({
+                "url": photo.get("url"),
+                "boardName": board.get("name"),
+                "boardLength": board.get("length"),
+                "userName": photo.get("userName", board.get("userName", "Anonymous")),
+                "userEmail": board.get("userEmail"),
+                "uploadedAt": photo.get("uploadedAt"),
+            })
+    
+    return photos
 
 # ──────────────────────────────────────────────
 # CLAIM LISTING ENDPOINTS
