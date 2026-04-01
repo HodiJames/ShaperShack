@@ -852,10 +852,10 @@ function ClaimModal({ listing, onClose, onSuccess }) {
       if (res.ok) {
         onSuccess();
       } else {
-        showToast("Failed to submit claim. Please try again.");
+        showToast("Failed to submit request. Please try again.");
       }
     } catch (err) {
-      showToast("Error submitting claim.");
+      showToast("Error submitting request.");
     }
     setLoading(false);
   };
@@ -867,19 +867,20 @@ function ClaimModal({ listing, onClose, onSuccess }) {
         
         <div style={{textAlign:"center", marginBottom:"20px"}}>
           <div style={{fontSize:"40px", marginBottom:"8px"}}>💎</div>
-          <h2 style={{margin:"0 0 4px 0"}}>Unlock Premium for {listing.name}</h2>
+          <h2 style={{margin:"0 0 4px 0"}}>Request Premium for {listing.name}</h2>
           <p style={{color:"var(--txm)", margin:0, fontSize:"14px"}}>Showcase your craft to surfers worldwide</p>
         </div>
 
         <div style={{background:"var(--bg2)", borderRadius:"12px", padding:"16px", marginBottom:"20px"}}>
-          <div style={{fontWeight:"600", marginBottom:"12px"}}>Premium features include:</div>
+          <div style={{fontWeight:"600", marginBottom:"12px"}}>Once approved, you'll get:</div>
           <div style={{display:"flex", flexDirection:"column", gap:"8px", fontSize:"14px"}}>
             <div>🎬 <strong>Watch This Shaper at Work</strong> — Link YouTube videos of you shaping</div>
             <div>📚 <strong>Shaping Knowledge</strong> — Share educational content about board design</div>
             <div>🏄 <strong>Board Portfolio</strong> — Showcase your boards with photos & specs</div>
+            <div>✨ <strong>Premium Badge</strong> — Stand out in search results</div>
           </div>
           <div style={{marginTop:"12px", padding:"10px", background:"#f0fdf4", borderRadius:"8px", fontSize:"13px", color:"#166534"}}>
-            ✓ 7-day free trial · Then $39/month · Cancel anytime
+            ✓ Free during beta · Manage from your account
           </div>
         </div>
 
@@ -893,7 +894,7 @@ function ClaimModal({ listing, onClose, onSuccess }) {
             {loading ? "Submitting..." : "Request Premium Access"}
           </button>
           <p style={{textAlign:"center", fontSize:"12px", color:"var(--txm)", marginTop:"12px"}}>
-            We'll verify your connection to this business and get back to you within 24-48 hours.
+            We'll verify your connection to this business and activate your premium features within 24-48 hours.
           </p>
         </form>
       </div>
@@ -1761,29 +1762,21 @@ function PremiumKnowledgeGrid({ items }) {
 // ─────────────────────────────────────────────
 // LISTING DETAIL PAGE
 // ─────────────────────────────────────────────
-function PremiumLock({ title, description, features, listing, onClaim, onUpgrade }) {
+function PremiumLock({ title, description, features, listing, onRequestPremium }) {
   const { user, setModal } = useContext(Ctx);
-  const isClaimed = listing?.claimed;
-  const isOwner = user && listing?.ownerEmail === user.email;
+  const isPremium = listing?.premium;
 
   const handleAction = () => {
-    console.log("PremiumLock clicked", { user: !!user, isClaimed, isOwner });
     if (!user) {
       setModal("in");
     } else {
-      // Always show claim modal first if not claimed, which leads to premium
-      // Or show premium modal if already claimed and owner
-      if (!isClaimed) {
-        if (onClaim) onClaim();
-      } else if (isOwner) {
-        if (onUpgrade) onUpgrade();
-      }
+      // Show premium request modal
+      if (onRequestPremium) onRequestPremium();
     }
   };
 
-  // For non-owners viewing unclaimed listings, still show the unlock button
-  // so they can see the flow (claim modal will explain they need to be the owner)
-  const showUnlockButton = !isClaimed || isOwner;
+  // Don't show lock if already premium
+  if (isPremium) return null;
 
   return (
     <div className="ld-lock">
@@ -1797,37 +1790,21 @@ function PremiumLock({ title, description, features, listing, onClaim, onUpgrade
         The River Pig · 7'0"–7'6" · 2+1 fins · $1,100 &nbsp;·&nbsp; The Dagger · 5'10"–6'2" · Thruster · $950
       </div>
       
-      {/* Claim / Upgrade Actions */}
+      {/* Request Premium Action */}
       <div style={{ marginTop: 16, textAlign: "center" }}>
-        {showUnlockButton ? (
-          <>
-            <p style={{ fontSize: 13, color: "var(--txm)", marginBottom: 12 }}>
-              {!isClaimed 
-                ? <><strong>Is this your business?</strong> Unlock premium features to showcase your work.</>
-                : <>Upgrade to Premium to showcase your work and connect with surfers.</>
-              }
-            </p>
-            <button 
-              className="btn" 
-              style={isClaimed && isOwner ? {background:"#8b5cf6", color:"#fff", border:"none"} : {}}
-              onClick={handleAction}
-            >
-              {!user 
-                ? "Sign In to Unlock" 
-                : !isClaimed 
-                  ? "Unlock Premium Features"
-                  : "Start 7-Day Free Trial"
-              }
-            </button>
-            {isClaimed && isOwner && (
-              <p style={{ fontSize: 11, color: "var(--txm)", marginTop: 8 }}>Then $39/month · Cancel anytime</p>
-            )}
-          </>
-        ) : (
-          <p style={{ fontSize: 13, color: "var(--txm)", marginTop: 12, maxWidth: 360, lineHeight: 1.6 }}>
-            This content is available when <strong>the shaper</strong> upgrades to a Premium listing.
-          </p>
-        )}
+        <p style={{ fontSize: 13, color: "var(--txm)", marginBottom: 12 }}>
+          <strong>Is this your business?</strong> Request premium to showcase your work.
+        </p>
+        <button 
+          className="btn" 
+          style={{background:"#8b5cf6", color:"#fff", border:"none"}}
+          onClick={handleAction}
+        >
+          {!user ? "Sign In to Request Premium" : "Request Premium Features"}
+        </button>
+        <p style={{ fontSize: 11, color: "var(--txm)", marginTop: 8 }}>
+          Free during beta · We'll verify and activate within 24-48 hours
+        </p>
       </div>
     </div>
   );
@@ -1836,12 +1813,10 @@ function PremiumLock({ title, description, features, listing, onClaim, onUpgrade
 function ListingPage({ listing }) {
   const { setPage, setCat, user, savedIds, toggleSave, showToast, setModal, categories, setPendingReviews, tr, locale, setSelected } = useContext(Ctx);
   const saved = savedIds.includes(listing.id);
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showPremiumRequestModal, setShowPremiumRequestModal] = useState(false);
   const bm = () => { if (!user) { setModal("in"); return; } toggleSave(listing.id); showToast(saved ? "Removed from saved" : "Saved!"); };
   const isPremium  = listing.premium;
   const hasBoards  = isPremium && (listing.boards?.length > 0 || listing.premiumContent?.boards?.length > 0);
-  const isClaimed = listing.claimed;
   const isOwner = user && listing.ownerEmail === user.email;
 
   // Premium content from owner edits
@@ -1906,8 +1881,7 @@ function ListingPage({ listing }) {
         </div>
       </div>
 
-      {showClaimModal && <ClaimModal listing={listing} onClose={() => setShowClaimModal(false)} onSuccess={() => { setShowClaimModal(false); showToast("Claim submitted! We'll be in touch."); }} />}
-      {showPremiumModal && <PremiumModal listing={listing} onClose={() => setShowPremiumModal(false)} />}
+      {showPremiumRequestModal && <ClaimModal listing={listing} onClose={() => setShowPremiumRequestModal(false)} onSuccess={() => { setShowPremiumRequestModal(false); showToast("Premium request submitted! We'll verify and activate within 24-48 hours."); }} />}
 
       <div className="ld-body">
         <div className="ld-sec">
@@ -1987,8 +1961,7 @@ function ListingPage({ listing }) {
             description="When the shaper upgrades to Premium, they can embed a video — watch their full shaping process, hear their philosophy, and get a feel for who they are before you order a board."
             features={["1 embedded YouTube video","Shaping process","Brand story","Build confidence before you buy"]}
             listing={listing}
-            onClaim={() => setShowClaimModal(true)}
-            onUpgrade={() => setShowPremiumModal(true)}
+            onRequestPremium={() => setShowPremiumRequestModal(true)}
           />
         )}
 
@@ -2019,8 +1992,7 @@ function ListingPage({ listing }) {
             description="When the shaper upgrades to Premium, they can share their philosophy on rocker, concave, tail shapes, outlines and more."
             features={["Rocker explained","Concave philosophy","Tail & outline thinking","Why it matters for your surfing"]}
             listing={listing}
-            onClaim={() => setShowClaimModal(true)}
-            onUpgrade={() => setShowPremiumModal(true)}
+            onRequestPremium={() => setShowPremiumRequestModal(true)}
           />
         )}
 
@@ -2084,8 +2056,7 @@ function ListingPage({ listing }) {
             description="When the shaper upgrades to Premium, they can showcase their full range with individual board cards — dimensions, fin setup, ideal conditions, and pricing."
             features={["Full board catalogue","Dimensions & fins","Who each board suits","Custom order pricing"]}
             listing={listing}
-            onClaim={() => setShowClaimModal(true)}
-            onUpgrade={() => setShowPremiumModal(true)}
+            onRequestPremium={() => setShowPremiumRequestModal(true)}
           />
         )}
       </div>
@@ -2655,14 +2626,14 @@ function ProfilePage() {
       {tab==="mylistings" && (
         <div>
           <p style={{fontSize:13,color:"var(--tx2)",marginBottom:16,lineHeight:1.6}}>
-            Listings you own or have claimed. Upgrade to Premium to unlock all features.
+            Your premium listings. Manage videos, boards, and educational content.
           </p>
           {myListings.length===0 ? (
             <div className="empty">
-              <div className="emico">🏪</div>
-              <p>You haven't claimed any listings yet.</p>
+              <div className="emico">💎</div>
+              <p>You don't have any premium listings yet.</p>
               <p style={{fontSize:13,color:"var(--txm)",marginTop:8}}>
-                Find your shaping business in the directory and click "Unlock Premium Features" to claim it.
+                Find your shaping business in the directory and click "Request Premium Features" to get started.
               </p>
               <button className="btn bp" onClick={()=>setPage("home")}>Browse Directory</button>
             </div>
@@ -2672,8 +2643,7 @@ function ProfilePage() {
                 <div key={l.id} className="my-listing-card">
                   <div className="my-listing-header">
                     <div className="my-listing-name">{l.name}</div>
-                    {l.premium && <span className="my-listing-badge premium">Premium</span>}
-                    {!l.premium && <span className="my-listing-badge basic">Basic</span>}
+                    <span className="my-listing-badge premium">Premium</span>
                   </div>
                   <div className="my-listing-meta">
                     <span>{l.country}</span>
@@ -2683,21 +2653,10 @@ function ProfilePage() {
                     <button className="btn bo bsm" onClick={()=>{setSelected(l);setPage("listing");}}>
                       View Listing
                     </button>
-                    {l.premium ? (
-                      <button className="btn bp bsm" onClick={()=>{setSelected(l);setPage("edit-premium");}}>
-                        Edit Premium Content
-                      </button>
-                    ) : (
-                      <button className="btn bsm" style={{background:"#8b5cf6",color:"#fff",border:"none"}} onClick={()=>{setSelected(l);setPage("listing");}}>
-                        Upgrade to Premium
-                      </button>
-                    )}
+                    <button className="btn bp bsm" onClick={()=>{setSelected(l);setPage("edit-premium");}}>
+                      Edit Premium Content
+                    </button>
                   </div>
-                  {l.premiumTrial && l.trialEndsAt && (
-                    <div className="my-listing-trial">
-                      Trial ends: {new Date(l.trialEndsAt).toLocaleDateString()}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
@@ -3357,7 +3316,7 @@ function AdminPage() {
         {[
           ["live",     `Listings (${listings.length})`],
           ["questions", `Questions (${pendingQuestions.length})`],
-          ["claims",   "Claims"],
+          ["claims",   "Premium Requests"],
           ["hero",     "Site Settings"],
         ].map(([t,l]) => (
           <button key={t} className={`atab ${tab===t?"on":""}`} onClick={()=>setTab(t)}>{l}</button>
@@ -3411,20 +3370,23 @@ function AdminPage() {
 
       {tab==="claims" && (
         <div>
-          <h3 style={{marginBottom:16}}>Listing Claims Awaiting Review</h3>
+          <h3 style={{marginBottom:8}}>Premium Requests Awaiting Review</h3>
+          <p style={{fontSize:13, color:"var(--tx2)", marginBottom:16}}>
+            Approving grants ownership AND activates Premium features for the listing.
+          </p>
           {pendingClaims.length===0
-            ? <div className="empty"><div className="emico">✅</div><p>No claims awaiting approval.</p></div>
+            ? <div className="empty"><div className="emico">✅</div><p>No premium requests awaiting approval.</p></div>
             : pendingClaims.map(c => (
                 <div key={c.listingId} className="acard">
                   <div className="ainfo">
-                    <h4 style={{marginBottom:4}}>🏪 {c.listingName}</h4>
-                    <p className="sub"><strong>Claimed by:</strong> {c.claimerName} ({c.claimerEmail})</p>
+                    <h4 style={{marginBottom:4}}>💎 {c.listingName}</h4>
+                    <p className="sub"><strong>Requested by:</strong> {c.claimerName} ({c.claimerEmail})</p>
                     {c.claimerPhone && <p className="sub"><strong>Phone:</strong> {c.claimerPhone}</p>}
                     {c.message && <p className="sub"><strong>Message:</strong> {c.message}</p>}
                     <p className="sub"><strong>Date:</strong> {c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "Unknown"}</p>
                   </div>
                   <div className="aacts">
-                    <button className="btn bsm bap" onClick={()=>approveClaim(c)}>✓ Approve</button>
+                    <button className="btn bsm bap" onClick={()=>approveClaim(c)}>✓ Approve Premium</button>
                     <button className="btn bsm brej" onClick={()=>rejectClaim(c)}>✕ Reject</button>
                   </div>
                 </div>

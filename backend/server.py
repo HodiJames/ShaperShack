@@ -435,7 +435,7 @@ async def get_claims(status: str = None):
 
 @app.put("/api/claims/{listing_id}/approve")
 async def approve_claim(listing_id: int, data: Dict[str, Any] = Body(...)):
-    """Approve a claim and link user to listing"""
+    """Approve a premium request - grants ownership AND premium status"""
     now = datetime.now(timezone.utc).isoformat()
     
     # Update claim status
@@ -444,13 +444,20 @@ async def approve_claim(listing_id: int, data: Dict[str, Any] = Body(...)):
         {"$set": {"status": "approved", "approvedAt": now}}
     )
     
-    # Update listing with owner
+    # Update listing with owner AND grant premium status
     listings_collection.update_one(
         {"id": listing_id},
         {"$set": {
             "ownerEmail": data.get("email"),
             "claimed": True,
-            "claimedAt": now
+            "claimedAt": now,
+            "premium": True,
+            "premiumSince": now,
+            "premiumContent": {
+                "videos": [],
+                "knowledge": [],
+                "boards": []
+            }
         }}
     )
     
