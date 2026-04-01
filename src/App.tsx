@@ -2759,12 +2759,8 @@ export default function App() {
   const [selected,   setSelected]   = useState(null);
   const [toast,      setToast]      = useState(null);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [heroImage,  setHeroImage]  = useState(() => {
-    try { return localStorage.getItem("ss_heroImage") || ""; } catch { return ""; }
-  });
-  const [logoImage,  setLogoImage]  = useState(() => {
-    try { return localStorage.getItem("ss_logoImage") || ""; } catch { return ""; }
-  });
+  const [heroImage,  setHeroImage]  = useState("");
+  const [logoImage,  setLogoImage]  = useState("");
   const [locale,     setLocale]     = useState(() => {
     try { return localStorage.getItem("ss_locale") || "en-AU"; } catch { return "en-AU"; }
   });
@@ -2775,29 +2771,39 @@ export default function App() {
     try { localStorage.setItem("ss_locale", locale); } catch {}
   }, [locale]);
 
-  // Persist hero and logo images to localStorage
+  // Load and persist hero/logo images from backend
   useEffect(() => {
-    try { 
-      if (heroImage && heroImage.length > 2000000) {
-        console.warn("Hero image too large for localStorage, use a URL instead");
-      } else {
-        localStorage.setItem("ss_heroImage", heroImage); 
-      }
-    } catch (e) { 
-      console.error("Failed to save hero image:", e);
+    fetch(`${API_BASE}/api/settings`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.heroImage) setHeroImage(data.heroImage);
+        if (data.logoImage) setLogoImage(data.logoImage);
+      })
+      .catch(err => console.error("Failed to load settings:", err));
+  }, []);
+
+  // Save hero image to backend when changed
+  useEffect(() => {
+    if (heroImage) {
+      fetch(`${API_BASE}/api/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ heroImage })
+      }).catch(err => console.error("Failed to save hero image:", err));
     }
   }, [heroImage]);
+
+  // Save logo image to backend when changed
   useEffect(() => {
-    try { 
-      if (logoImage && logoImage.length > 500000) {
-        console.warn("Logo image too large for localStorage, use a URL instead");
-      } else {
-        localStorage.setItem("ss_logoImage", logoImage); 
-      }
-    } catch (e) {
-      console.error("Failed to save logo image:", e);
+    if (logoImage) {
+      fetch(`${API_BASE}/api/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoImage })
+      }).catch(err => console.error("Failed to save logo image:", err));
     }
   }, [logoImage]);
+
   // Load listings from backend on startup
   useEffect(() => {
     fetch(`${API_BASE}/api/listings`)

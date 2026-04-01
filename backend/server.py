@@ -33,6 +33,7 @@ translations_collection = db["translations"]
 bookmarks_collection = db["bookmarks"]
 listings_collection = db["listings"]
 questions_collection = db["questions"]
+settings_collection = db["settings"]
 
 LANGUAGE_NAMES = {
     "pt-BR": "Brazilian Portuguese",
@@ -325,6 +326,32 @@ async def answer_question(question_id: int, answer: Dict[str, Any] = Body(...)):
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Question not found")
+    return {"success": True}
+
+# ──────────────────────────────────────────────
+# SETTINGS ENDPOINTS (Hero image, etc.)
+# ──────────────────────────────────────────────
+
+@app.get("/api/settings")
+async def get_settings():
+    """Get site settings"""
+    settings = settings_collection.find_one({"type": "site"}, {"_id": 0})
+    if not settings:
+        return {"heroImage": "", "logoImage": ""}
+    return settings
+
+@app.put("/api/settings")
+async def update_settings(data: Dict[str, Any] = Body(...)):
+    """Update site settings"""
+    now = datetime.now(timezone.utc).isoformat()
+    data["updatedAt"] = now
+    data["type"] = "site"
+    
+    settings_collection.update_one(
+        {"type": "site"},
+        {"$set": data},
+        upsert=True
+    )
     return {"success": True}
 
 # ──────────────────────────────────────────────
