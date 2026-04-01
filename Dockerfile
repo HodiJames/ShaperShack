@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Force rebuild - timestamp 20260401-1645
+# Force rebuild - timestamp 20260401-1648
 WORKDIR /app
 
 # Upgrade pip first
@@ -15,6 +15,7 @@ COPY backend/ ./backend/
 
 # Railway injects PORT env var at runtime, default to 8001
 ENV PORT=8001
+ENV PYTHONUNBUFFERED=1
 
-# Use shell form with explicit /bin/sh -c to ensure variable expansion
-CMD /bin/sh -c "uvicorn backend.server:app --host 0.0.0.0 --port ${PORT}"
+# Use shell form with unbuffered Python output
+CMD /bin/sh -c "python -u -m uvicorn backend.server:app --host 0.0.0.0 --port ${PORT}"
