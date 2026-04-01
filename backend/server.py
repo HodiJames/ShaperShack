@@ -535,7 +535,7 @@ async def reject_claim(listing_id: int):
 @app.post("/api/premium/checkout")
 async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(...)):
     """Create a Stripe checkout session for premium subscription"""
-    import stripe
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
     
     listing_id = data.get("listingId")
     email = data.get("email")
@@ -545,33 +545,23 @@ async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(
         raise HTTPException(status_code=400, detail="Missing listingId or email")
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    if not api_key or api_key == "sk_test_emergent":
+    if not api_key:
         raise HTTPException(status_code=503, detail="Stripe payments not configured yet. Please use the free trial.")
     
-    stripe.api_key = api_key
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     
     success_url = f"{origin_url}/premium-success?session_id={{CHECKOUT_SESSION_ID}}&listing_id={listing_id}"
     cancel_url = f"{origin_url}/listing/{listing_id}"
     
     try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=["card"],
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "unit_amount": int(PREMIUM_PRICE * 100),  # Stripe uses cents
-                    "product_data": {
-                        "name": "Shaper Shed Premium",
-                        "description": "Monthly premium subscription"
-                    },
-                    "recurring": {"interval": "month"}
-                },
-                "quantity": 1
-            }],
-            mode="subscription",
+        checkout_request = CheckoutSessionRequest(
+            amount=float(PREMIUM_PRICE),
+            currency="usd",
             success_url=success_url,
             cancel_url=cancel_url,
-            customer_email=email,
             metadata={
                 "listing_id": str(listing_id),
                 "email": email,
@@ -579,10 +569,12 @@ async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(
             }
         )
         
+        session = await stripe_checkout.create_checkout_session(checkout_request)
+        
         # Create pending transaction record
         now = datetime.now(timezone.utc).isoformat()
         payment_transactions_collection.insert_one({
-            "sessionId": session.id,
+            "sessionId": session.session_id,
             "listingId": listing_id,
             "email": email,
             "amount": PREMIUM_PRICE,
@@ -592,26 +584,29 @@ async def create_premium_checkout(request: Request, data: Dict[str, Any] = Body(
             "createdAt": now
         })
         
-        return {"url": session.url, "sessionId": session.id}
+        return {"url": session.url, "sessionId": session.session_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/premium/status/{session_id}")
 async def get_premium_status(request: Request, session_id: str):
     """Check the status of a premium checkout session"""
-    import stripe
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    if not api_key or api_key == "sk_test_emergent":
+    if not api_key:
         raise HTTPException(status_code=503, detail="Stripe not configured")
     
-    stripe.api_key = api_key
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     
     try:
-        session = stripe.checkout.Session.retrieve(session_id)
+        checkout_status = await stripe_checkout.get_checkout_status(session_id)
         
         # Update transaction record
-        if session.payment_status == "paid":
+        if checkout_status.payment_status == "paid":
             transaction = payment_transactions_collection.find_one({"sessionId": session_id})
             if transaction and transaction.get("status") != "completed":
                 now = datetime.now(timezone.utc).isoformat()
@@ -621,30 +616,39 @@ async def get_premium_status(request: Request, session_id: str):
                     {"$set": {"status": "completed", "paymentStatus": "paid", "completedAt": now}}
                 )
                 
-                listing_id = int(session.metadata.get("listing_id", 0))
+                listing_id = int(checkout_status.metadata.get("listing_id", 0))
+                email = checkout_status.metadata.get("email", "")
                 if listing_id:
+                    # Create/update subscription record
                     subscriptions_collection.update_one(
                         {"listingId": listing_id},
                         {"$set": {
                             "listingId": listing_id,
-                            "email": session.metadata.get("email"),
+                            "email": email,
                             "status": "active",
                             "startedAt": now,
-                            "currentPeriodEnd": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                            "currentPeriodEnd": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat(),
+                            "stripeSessionId": session_id
                         }},
                         upsert=True
                     )
                     
+                    # Update listing to premium
                     listings_collection.update_one(
                         {"id": listing_id},
-                        {"$set": {"premium": True, "premiumSince": now}}
+                        {"$set": {
+                            "premium": True,
+                            "premiumTrial": False,
+                            "premiumSince": now,
+                            "ownerEmail": email
+                        }}
                     )
         
         return {
-            "status": session.status,
-            "paymentStatus": session.payment_status,
-            "amount": session.amount_total,
-            "metadata": dict(session.metadata) if session.metadata else {}
+            "status": checkout_status.status,
+            "paymentStatus": checkout_status.payment_status,
+            "amount": checkout_status.amount_total,
+            "metadata": checkout_status.metadata
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -652,34 +656,53 @@ async def get_premium_status(request: Request, session_id: str):
 @app.post("/api/webhook/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events"""
-    import stripe
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     
     api_key = os.environ.get("STRIPE_API_KEY")
-    webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
     
-    if not api_key or api_key == "sk_test_emergent":
+    if not api_key:
         return {"received": True, "note": "Stripe not configured"}
     
-    stripe.api_key = api_key
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     body = await request.body()
     signature = request.headers.get("Stripe-Signature", "")
     
     try:
-        if webhook_secret:
-            event = stripe.Webhook.construct_event(body, signature, webhook_secret)
-        else:
-            event = stripe.Event.construct_from(json.loads(body), stripe.api_key)
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
         
-        if event.type == "checkout.session.completed":
-            session = event.data.object
-            if session.payment_status == "paid":
-                listing_id = int(session.metadata.get("listing_id", 0))
-                if listing_id:
-                    now = datetime.now(timezone.utc).isoformat()
-                    listings_collection.update_one(
-                        {"id": listing_id},
-                        {"$set": {"premium": True, "premiumSince": now}}
-                    )
+        if webhook_response.event_type == "checkout.session.completed" and webhook_response.payment_status == "paid":
+            listing_id = int(webhook_response.metadata.get("listing_id", 0))
+            email = webhook_response.metadata.get("email", "")
+            if listing_id:
+                now = datetime.now(timezone.utc).isoformat()
+                
+                # Update transaction
+                payment_transactions_collection.update_one(
+                    {"sessionId": webhook_response.session_id},
+                    {"$set": {"status": "completed", "paymentStatus": "paid", "completedAt": now}}
+                )
+                
+                # Update subscription
+                subscriptions_collection.update_one(
+                    {"listingId": listing_id},
+                    {"$set": {
+                        "listingId": listing_id,
+                        "email": email,
+                        "status": "active",
+                        "startedAt": now,
+                        "currentPeriodEnd": (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+                    }},
+                    upsert=True
+                )
+                
+                # Update listing
+                listings_collection.update_one(
+                    {"id": listing_id},
+                    {"$set": {"premium": True, "premiumTrial": False, "premiumSince": now, "ownerEmail": email}}
+                )
         
         return {"received": True}
     except Exception as e:
@@ -714,10 +737,170 @@ async def start_premium_trial(data: Dict[str, Any] = Body(...)):
     # Mark listing as premium (trial)
     listings_collection.update_one(
         {"id": listing_id},
-        {"$set": {"premium": True, "premiumTrial": True, "trialEndsAt": trial_end.isoformat()}}
+        {"$set": {"premium": True, "premiumTrial": True, "trialEndsAt": trial_end.isoformat(), "ownerEmail": email}}
     )
     
     return {"success": True, "trialEndsAt": trial_end.isoformat()}
+
+# ──────────────────────────────────────────────
+# SUBSCRIPTION MANAGEMENT ENDPOINTS
+# ──────────────────────────────────────────────
+
+@app.get("/api/subscription/{listing_id}")
+async def get_subscription_details(listing_id: int):
+    """Get subscription details for a listing"""
+    subscription = subscriptions_collection.find_one({"listingId": listing_id}, {"_id": 0})
+    listing = listings_collection.find_one({"id": listing_id}, {"_id": 0})
+    
+    if not subscription and not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Calculate trial days remaining
+    trial_days_remaining = 0
+    if subscription and subscription.get("status") == "trial":
+        trial_end = datetime.fromisoformat(subscription.get("trialEndsAt", "").replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        delta = trial_end - now
+        trial_days_remaining = max(0, delta.days)
+        
+        # Check if trial expired
+        if trial_days_remaining == 0 and delta.total_seconds() < 0:
+            subscription["status"] = "trial_expired"
+    
+    return {
+        "subscription": subscription,
+        "listing": listing,
+        "trialDaysRemaining": trial_days_remaining,
+        "isPremium": listing.get("premium", False) if listing else False,
+        "isTrial": subscription.get("status") == "trial" if subscription else False,
+        "ownerEmail": listing.get("ownerEmail") if listing else None
+    }
+
+@app.get("/api/billing/{email}")
+async def get_billing_details(email: str):
+    """Get billing details for a user"""
+    # Find all subscriptions for this user
+    subscriptions = list(subscriptions_collection.find({"email": email}, {"_id": 0}))
+    
+    # Find all transactions for this user
+    transactions = list(payment_transactions_collection.find(
+        {"email": email},
+        {"_id": 0}
+    ).sort("createdAt", -1).limit(20))
+    
+    # Find listings owned by this user
+    owned_listings = list(listings_collection.find({"ownerEmail": email}, {"_id": 0, "id": 1, "name": 1, "premium": 1, "premiumTrial": 1, "trialEndsAt": 1}))
+    
+    return {
+        "subscriptions": subscriptions,
+        "transactions": transactions,
+        "ownedListings": owned_listings
+    }
+
+# ──────────────────────────────────────────────
+# ADMIN PREMIUM MANAGEMENT ENDPOINTS
+# ──────────────────────────────────────────────
+
+@app.put("/api/admin/listings/{listing_id}/remove-premium")
+async def admin_remove_premium(listing_id: int, data: Dict[str, Any] = Body(...)):
+    """Admin: Remove premium privileges from a listing"""
+    admin_email = data.get("adminEmail", "")
+    
+    if not is_admin(admin_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update listing to remove premium status
+    result = listings_collection.update_one(
+        {"id": listing_id},
+        {"$set": {
+            "premium": False,
+            "premiumTrial": False,
+            "premiumRevokedAt": now,
+            "premiumRevokedBy": admin_email
+        }}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    # Update subscription status
+    subscriptions_collection.update_one(
+        {"listingId": listing_id},
+        {"$set": {"status": "revoked", "revokedAt": now, "revokedBy": admin_email}}
+    )
+    
+    return {"success": True, "message": "Premium privileges removed"}
+
+@app.put("/api/admin/listings/{listing_id}/reallocate-owner")
+async def admin_reallocate_owner(listing_id: int, data: Dict[str, Any] = Body(...)):
+    """Admin: Reallocate listing control to a different user"""
+    admin_email = data.get("adminEmail", "")
+    new_owner_email = data.get("newOwnerEmail", "")
+    
+    if not is_admin(admin_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not new_owner_email:
+        raise HTTPException(status_code=400, detail="New owner email required")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get current listing
+    listing = listings_collection.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    
+    old_owner = listing.get("ownerEmail", "")
+    
+    # Update listing owner
+    listings_collection.update_one(
+        {"id": listing_id},
+        {"$set": {
+            "ownerEmail": new_owner_email,
+            "ownerChangedAt": now,
+            "previousOwner": old_owner,
+            "ownerChangedBy": admin_email
+        }}
+    )
+    
+    # Update subscription email
+    subscriptions_collection.update_one(
+        {"listingId": listing_id},
+        {"$set": {"email": new_owner_email, "emailChangedAt": now}}
+    )
+    
+    return {"success": True, "message": f"Listing control transferred to {new_owner_email}"}
+
+@app.get("/api/admin/premium-listings")
+async def get_all_premium_listings(admin_email: str = None):
+    """Admin: Get all premium listings with subscription details"""
+    if admin_email and not is_admin(admin_email):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all premium listings
+    premium_listings = list(listings_collection.find(
+        {"premium": True},
+        {"_id": 0, "id": 1, "name": 1, "ownerEmail": 1, "premium": 1, "premiumTrial": 1, "trialEndsAt": 1, "premiumSince": 1, "claimedAt": 1}
+    ))
+    
+    # Enrich with subscription data
+    for listing in premium_listings:
+        sub = subscriptions_collection.find_one({"listingId": listing["id"]}, {"_id": 0})
+        listing["subscription"] = sub
+        
+        # Calculate trial days remaining
+        if sub and sub.get("status") == "trial":
+            try:
+                trial_end = datetime.fromisoformat(sub.get("trialEndsAt", "").replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                delta = trial_end - now
+                listing["trialDaysRemaining"] = max(0, delta.days)
+            except:
+                listing["trialDaysRemaining"] = 0
+    
+    return {"premiumListings": premium_listings}
 
 # ──────────────────────────────────────────────
 # VIDEO ENDPOINTS

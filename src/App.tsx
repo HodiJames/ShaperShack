@@ -473,6 +473,42 @@ const CSS = `
 .logo-upload-zone{border:2px dashed var(--bd);border-radius:var(--rs);padding:14px;text-align:center;cursor:pointer;transition:all .15s;font-size:13px;color:var(--txm);}
 .logo-upload-zone:hover{border-color:var(--g);color:var(--g);background:var(--gl);}
 
+/* Billing Tab Styles */
+.billing-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin-bottom:0;}
+.billing-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.billing-card-body{margin-top:16px;}
+.billing-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px;}
+.billing-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--txm);margin-bottom:4px;}
+.billing-value{font-size:14px;color:var(--tx);}
+.billing-status{font-size:11px;font-weight:600;padding:4px 10px;border-radius:16px;}
+.billing-status.trial{background:#fef3c7;color:#7a5410;border:1px solid #f0c84a;}
+.billing-status.active{background:#dcfce7;color:#166534;border:1px solid #86efac;}
+.billing-status.inactive{background:var(--tag);color:var(--txm);border:1px solid var(--bdl);}
+.billing-table{width:100%;}
+.billing-table-header{display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdl);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--txm);}
+.billing-table-row{display:grid;grid-template-columns:1fr 2fr 1fr 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--bdl);font-size:13px;color:var(--tx);}
+.billing-table-row:last-child{border-bottom:none;}
+.billing-tx-status{font-size:11px;padding:3px 8px;border-radius:12px;font-weight:500;}
+.billing-tx-status.paid{background:#dcfce7;color:#166534;}
+.billing-tx-status.pending{background:#fef3c7;color:#7a5410;}
+.billing-terms-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 0;background:none;border:none;font-size:14px;font-weight:500;color:var(--tx);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.billing-terms-toggle:hover{color:var(--g);}
+.billing-terms-content{padding:16px 0 8px;border-top:1px solid var(--bdl);font-size:13px;color:var(--tx2);line-height:1.7;}
+.billing-terms-content h4{font-size:15px;font-weight:600;margin-bottom:12px;color:var(--tx);}
+.billing-terms-content p{margin-bottom:10px;}
+.billing-terms-content p:last-child{margin-bottom:0;}
+
+/* Admin Premium Management Styles */
+.admin-prem-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:10px;}
+.admin-prem-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.admin-prem-name{font-weight:600;font-size:15px;color:var(--tx);}
+.admin-prem-meta{font-size:12px;color:var(--txm);margin-top:4px;}
+.admin-prem-badges{display:flex;gap:6px;flex-wrap:wrap;}
+.admin-prem-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdl);}
+.admin-prem-reallocate{display:flex;gap:8px;align-items:center;margin-top:12px;}
+.admin-prem-reallocate input{flex:1;padding:8px 12px;border:1px solid var(--bd);border-radius:var(--rs);font-size:13px;font-family:'DM Sans',sans-serif;}
+.admin-prem-reallocate input:focus{outline:none;border-color:var(--g);}
+
 @media(max-width:768px){
   .hero-text h1{font-size:24px}
   .f2{grid-template-columns:1fr}
@@ -3003,6 +3039,392 @@ const DEMO_QUIVER = [
 ];
 
 // ─────────────────────────────────────────────
+// MY LISTINGS TAB - Shows owned premium listings with trial info
+// ─────────────────────────────────────────────
+function MyListingsTab({ myListings, setSelected, setPage }) {
+  const [subscriptionData, setSubscriptionData] = useState({});
+  
+  useEffect(() => {
+    // Load subscription data for each listing
+    myListings.forEach(async (l) => {
+      try {
+        const res = await fetch(`${API_BASE}/api/subscription/${l.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSubscriptionData(prev => ({ ...prev, [l.id]: data }));
+        }
+      } catch (err) {
+        console.error("Failed to load subscription:", err);
+      }
+    });
+  }, [myListings]);
+
+  const getTrialBadge = (listing) => {
+    const sub = subscriptionData[listing.id];
+    if (!sub) return null;
+    
+    if (sub.isTrial && sub.trialDaysRemaining !== undefined) {
+      const days = sub.trialDaysRemaining;
+      const color = days <= 2 ? "#dc2626" : days <= 5 ? "#f59e0b" : "#10b981";
+      return (
+        <span style={{ 
+          fontSize: 11, 
+          background: color + "15", 
+          color: color, 
+          border: `1px solid ${color}40`,
+          padding: "2px 8px", 
+          borderRadius: 12,
+          fontWeight: 600 
+        }}>
+          {days} day{days !== 1 ? "s" : ""} left in trial
+        </span>
+      );
+    }
+    
+    if (sub.subscription?.status === "active") {
+      return (
+        <span style={{ 
+          fontSize: 11, 
+          background: "#10b98115", 
+          color: "#10b981", 
+          border: "1px solid #10b98140",
+          padding: "2px 8px", 
+          borderRadius: 12,
+          fontWeight: 600 
+        }}>
+          Active subscription
+        </span>
+      );
+    }
+    
+    return null;
+  };
+
+  return (
+    <div>
+      <p style={{fontSize:13,color:"var(--tx2)",marginBottom:16,lineHeight:1.6}}>
+        Your premium listings. Manage videos, boards, and educational content.
+      </p>
+      {myListings.length===0 ? (
+        <div className="empty">
+          <div className="emico">💎</div>
+          <p>You don't have any premium listings yet.</p>
+          <p style={{fontSize:13,color:"var(--txm)",marginTop:8}}>
+            Find your shaping business in the directory and click "Request Premium Features" to get started.
+          </p>
+          <button className="btn bp" onClick={()=>setPage("home")}>Browse Directory</button>
+        </div>
+      ) : (
+        <div className="my-listings-grid">
+          {myListings.map(l => (
+            <div key={l.id} className="my-listing-card">
+              <div className="my-listing-header">
+                <div className="my-listing-name">{l.name}</div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                  <span className="my-listing-badge premium">Premium</span>
+                  {getTrialBadge(l)}
+                </div>
+              </div>
+              <div className="my-listing-meta">
+                <span>{l.country}</span>
+                {l.type && <span> · {l.type}</span>}
+              </div>
+              <div className="my-listing-actions">
+                <button className="btn bo bsm" onClick={()=>{setSelected(l);setPage("listing");}}>
+                  View Listing
+                </button>
+                <button className="btn bp bsm" onClick={()=>{setSelected(l);setPage("edit-premium");}}>
+                  Edit Premium Content
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// BILLING TAB - Subscription management, payment details, invoices
+// ─────────────────────────────────────────────
+function BillingTab({ user, myListings }) {
+  const { showToast } = useContext(Ctx);
+  const [billingData, setBillingData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showTerms, setShowTerms] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(null);
+
+  useEffect(() => {
+    loadBillingData();
+  }, [user.email]);
+
+  const loadBillingData = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/billing/${user.email}`);
+      if (res.ok) {
+        const data = await res.json();
+        setBillingData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load billing data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpgrade = async (listingId) => {
+    setUpgradeLoading(listingId);
+    try {
+      const res = await fetch(`${API_BASE}/api/premium/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId,
+          email: user.email,
+          originUrl: window.location.origin
+        })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Failed to start checkout");
+      }
+    } catch (err) {
+      showToast("Failed to start checkout");
+    } finally {
+      setUpgradeLoading(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: 40, color: "var(--txm)" }}>
+        Loading billing information...
+      </div>
+    );
+  }
+
+  const subscriptions = billingData?.subscriptions || [];
+  const transactions = billingData?.transactions || [];
+  const ownedListings = billingData?.ownedListings || [];
+
+  // Find trial listings that need upgrade
+  const trialListings = ownedListings.filter(l => l.premiumTrial);
+  const activeSubscriptions = subscriptions.filter(s => s.status === "active");
+  const trialSubscriptions = subscriptions.filter(s => s.status === "trial");
+
+  return (
+    <div>
+      <p style={{fontSize:13,color:"var(--tx2)",marginBottom:20,lineHeight:1.6}}>
+        Manage your premium subscriptions, view payment history, and update billing details.
+      </p>
+
+      {/* Current Subscriptions */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, marginBottom: 12 }}>
+          💎 Your Subscriptions
+        </h3>
+        
+        {ownedListings.length === 0 ? (
+          <div className="billing-card">
+            <div style={{ textAlign: "center", padding: 20, color: "var(--txm)" }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+              <div>No premium listings yet</div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {ownedListings.map(listing => {
+              const sub = subscriptions.find(s => s.listingId === listing.id);
+              const isTrial = sub?.status === "trial";
+              const isActive = sub?.status === "active";
+              
+              let trialDaysRemaining = 0;
+              if (isTrial && sub.trialEndsAt) {
+                const trialEnd = new Date(sub.trialEndsAt);
+                const now = new Date();
+                trialDaysRemaining = Math.max(0, Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)));
+              }
+
+              return (
+                <div key={listing.id} className="billing-card">
+                  <div className="billing-card-header">
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{listing.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--txm)" }}>Listing ID: {listing.id}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {isTrial && (
+                        <span className="billing-status trial">
+                          Trial • {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""} left
+                        </span>
+                      )}
+                      {isActive && <span className="billing-status active">Active</span>}
+                      {!isTrial && !isActive && <span className="billing-status inactive">Inactive</span>}
+                    </div>
+                  </div>
+                  
+                  <div className="billing-card-body">
+                    <div className="billing-info-grid">
+                      <div>
+                        <div className="billing-label">Plan</div>
+                        <div className="billing-value">Shaper Shed Premium</div>
+                      </div>
+                      <div>
+                        <div className="billing-label">Price</div>
+                        <div className="billing-value">$39/month</div>
+                      </div>
+                      {sub?.startedAt && (
+                        <div>
+                          <div className="billing-label">{isTrial ? "Trial Started" : "Subscription Started"}</div>
+                          <div className="billing-value">{new Date(sub.startedAt || sub.trialStartedAt).toLocaleDateString()}</div>
+                        </div>
+                      )}
+                      {isActive && sub?.currentPeriodEnd && (
+                        <div>
+                          <div className="billing-label">Next Billing</div>
+                          <div className="billing-value">{new Date(sub.currentPeriodEnd).toLocaleDateString()}</div>
+                        </div>
+                      )}
+                      {isTrial && sub?.trialEndsAt && (
+                        <div>
+                          <div className="billing-label">Trial Ends</div>
+                          <div className="billing-value" style={{ color: trialDaysRemaining <= 2 ? "#dc2626" : "var(--tx)" }}>
+                            {new Date(sub.trialEndsAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {isTrial && (
+                      <div style={{ marginTop: 16, padding: 12, background: "#fef3c7", borderRadius: 8, border: "1px solid #f0c84a" }}>
+                        <div style={{ fontSize: 13, color: "#7a5410", marginBottom: 8 }}>
+                          ⏰ Your trial ends in {trialDaysRemaining} day{trialDaysRemaining !== 1 ? "s" : ""}. Upgrade now to keep your premium features.
+                        </div>
+                        <button 
+                          className="btn bp bsm" 
+                          onClick={() => handleUpgrade(listing.id)}
+                          disabled={upgradeLoading === listing.id}
+                        >
+                          {upgradeLoading === listing.id ? "Processing..." : "Upgrade to Paid Plan — $39/mo"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Payment History / Invoices */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, marginBottom: 12 }}>
+          📄 Payment History
+        </h3>
+        <div className="billing-card">
+          {transactions.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 20, color: "var(--txm)" }}>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>📋</div>
+              <div>No payment history yet</div>
+              <div style={{ fontSize: 12, marginTop: 4 }}>Payments will appear here once you upgrade from trial</div>
+            </div>
+          ) : (
+            <div className="billing-table">
+              <div className="billing-table-header">
+                <div>Date</div>
+                <div>Description</div>
+                <div>Amount</div>
+                <div>Status</div>
+              </div>
+              {transactions.map((tx, i) => (
+                <div key={i} className="billing-table-row">
+                  <div>{new Date(tx.createdAt).toLocaleDateString()}</div>
+                  <div>Premium Subscription</div>
+                  <div>${tx.amount?.toFixed(2) || "39.00"}</div>
+                  <div>
+                    <span className={`billing-tx-status ${tx.paymentStatus}`}>
+                      {tx.paymentStatus === "paid" ? "✓ Paid" : tx.paymentStatus === "pending" ? "⏳ Pending" : tx.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Method - Placeholder since we use Stripe Checkout */}
+      <div style={{ marginBottom: 24 }}>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, marginBottom: 12 }}>
+          💳 Payment Method
+        </h3>
+        <div className="billing-card">
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ 
+              width: 48, height: 32, background: "linear-gradient(135deg, #1a1f71 0%, #2d5aa8 100%)", 
+              borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 10, fontWeight: 700
+            }}>
+              VISA
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>Managed by Stripe</div>
+              <div style={{ fontSize: 12, color: "var(--txm)" }}>
+                Payment details are securely handled through Stripe checkout
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Terms & Conditions */}
+      <div>
+        <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 18, marginBottom: 12 }}>
+          📜 Terms & Conditions
+        </h3>
+        <div className="billing-card">
+          <button 
+            className="billing-terms-toggle"
+            onClick={() => setShowTerms(!showTerms)}
+          >
+            <span>Premium Subscription Terms</span>
+            <span style={{ transform: showTerms ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
+          </button>
+          {showTerms && (
+            <div className="billing-terms-content">
+              <h4>Shaper Shed Premium Terms of Service</h4>
+              <p><strong>1. Subscription</strong></p>
+              <p>Premium subscriptions are billed monthly at $39 USD. Your subscription will automatically renew each month unless cancelled.</p>
+              <p><strong>2. Free Trial</strong></p>
+              <p>New premium listings receive a 7-day free trial. You will not be charged during the trial period. If you do not upgrade before the trial ends, your premium features will be disabled.</p>
+              <p><strong>3. Cancellation</strong></p>
+              <p>You may cancel your subscription at any time. Upon cancellation, you will retain access to premium features until the end of your current billing period.</p>
+              <p><strong>4. Refunds</strong></p>
+              <p>Subscription payments are non-refundable. If you cancel, you will not receive a refund for any remaining time in your billing period.</p>
+              <p><strong>5. Content Ownership</strong></p>
+              <p>You retain ownership of all content you upload. By uploading content, you grant Shaper Shed a license to display it on the platform.</p>
+              <p><strong>6. Changes to Terms</strong></p>
+              <p>We may update these terms from time to time. Continued use of premium features constitutes acceptance of updated terms.</p>
+              <p style={{ marginTop: 12, fontSize: 11, color: "var(--txm)" }}>
+                Last updated: December 2025
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // USER PROFILE PAGE
 // ─────────────────────────────────────────────
 const TIER_CONFIG = [
@@ -3078,50 +3500,17 @@ function ProfilePage() {
       </div>
 
       <div className="atabs" style={{ marginTop:20 }}>
-        {[["mylistings","💎 My Listings"],["saved",tr("profile.saved")],["quiver","🏄 Quiver"],["activity",tr("profile.activity")],["badges",tr("profile.badges")]].map(([t,l]) => (
+        {[["mylistings","💎 My Listings"],["billing","💳 Billing"],["saved",tr("profile.saved")],["quiver","🏄 Quiver"],["activity",tr("profile.activity")],["badges",tr("profile.badges")]].map(([t,l]) => (
           <button key={t} className={`atab ${tab===t?"on":""}`} onClick={()=>setTab(t)}>{l}</button>
         ))}
       </div>
 
       {tab==="mylistings" && (
-        <div>
-          <p style={{fontSize:13,color:"var(--tx2)",marginBottom:16,lineHeight:1.6}}>
-            Your premium listings. Manage videos, boards, and educational content.
-          </p>
-          {myListings.length===0 ? (
-            <div className="empty">
-              <div className="emico">💎</div>
-              <p>You don't have any premium listings yet.</p>
-              <p style={{fontSize:13,color:"var(--txm)",marginTop:8}}>
-                Find your shaping business in the directory and click "Request Premium Features" to get started.
-              </p>
-              <button className="btn bp" onClick={()=>setPage("home")}>Browse Directory</button>
-            </div>
-          ) : (
-            <div className="my-listings-grid">
-              {myListings.map(l => (
-                <div key={l.id} className="my-listing-card">
-                  <div className="my-listing-header">
-                    <div className="my-listing-name">{l.name}</div>
-                    <span className="my-listing-badge premium">Premium</span>
-                  </div>
-                  <div className="my-listing-meta">
-                    <span>{l.country}</span>
-                    {l.type && <span> · {l.type}</span>}
-                  </div>
-                  <div className="my-listing-actions">
-                    <button className="btn bo bsm" onClick={()=>{setSelected(l);setPage("listing");}}>
-                      View Listing
-                    </button>
-                    <button className="btn bp bsm" onClick={()=>{setSelected(l);setPage("edit-premium");}}>
-                      Edit Premium Content
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        <MyListingsTab myListings={myListings} setSelected={setSelected} setPage={setPage} />
+      )}
+
+      {tab==="billing" && (
+        <BillingTab user={user} myListings={myListings} />
       )}
 
       {tab==="quiver"   && <QuiverTab listings={listings} />}
@@ -3631,6 +4020,178 @@ function DataManagement() {
 }
 
 // ─────────────────────────────────────────────
+// ADMIN PREMIUM MANAGEMENT COMPONENT
+// ─────────────────────────────────────────────
+function AdminPremiumManagement({ user, listings, setListings, showToast }) {
+  const [premiumListings, setPremiumListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [reallocateEmail, setReallocateEmail] = useState({});
+  const [actionLoading, setActionLoading] = useState(null);
+
+  useEffect(() => {
+    loadPremiumListings();
+  }, []);
+
+  const loadPremiumListings = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/premium-listings?admin_email=${user?.email || ""}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPremiumListings(data.premiumListings || []);
+      }
+    } catch (err) {
+      console.error("Failed to load premium listings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemovePremium = async (listingId) => {
+    if (!confirm("Are you sure you want to remove premium privileges from this listing? This action cannot be undone.")) return;
+    
+    setActionLoading(listingId);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/listings/${listingId}/remove-premium`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminEmail: user?.email })
+      });
+      
+      if (res.ok) {
+        showToast("Premium privileges removed");
+        // Update local state
+        setPremiumListings(p => p.filter(l => l.id !== listingId));
+        setListings(p => p.map(l => l.id === listingId ? { ...l, premium: false, premiumTrial: false } : l));
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Failed to remove premium");
+      }
+    } catch (err) {
+      showToast("Failed to remove premium");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReallocate = async (listingId) => {
+    const newEmail = reallocateEmail[listingId]?.trim();
+    if (!newEmail) {
+      showToast("Please enter an email address");
+      return;
+    }
+    
+    if (!confirm(`Transfer control of this listing to ${newEmail}?`)) return;
+    
+    setActionLoading(listingId);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/listings/${listingId}/reallocate-owner`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminEmail: user?.email, newOwnerEmail: newEmail })
+      });
+      
+      if (res.ok) {
+        showToast(`Listing control transferred to ${newEmail}`);
+        // Update local state
+        setPremiumListings(p => p.map(l => l.id === listingId ? { ...l, ownerEmail: newEmail } : l));
+        setListings(p => p.map(l => l.id === listingId ? { ...l, ownerEmail: newEmail } : l));
+        setReallocateEmail(p => ({ ...p, [listingId]: "" }));
+      } else {
+        const err = await res.json();
+        showToast(err.detail || "Failed to reallocate");
+      }
+    } catch (err) {
+      showToast("Failed to reallocate");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: "center", padding: 40, color: "var(--txm)" }}>Loading premium listings...</div>;
+  }
+
+  return (
+    <div>
+      <h3 style={{ marginBottom: 8 }}>Premium Listings Management</h3>
+      <p style={{ fontSize: 13, color: "var(--tx2)", marginBottom: 16 }}>
+        Manage premium subscriptions. Remove privileges or transfer control to a different user.
+      </p>
+      
+      {premiumListings.length === 0 ? (
+        <div className="empty">
+          <div className="emico">💎</div>
+          <p>No premium listings found.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {premiumListings.map(listing => {
+            const sub = listing.subscription;
+            const isTrial = sub?.status === "trial";
+            const trialDays = listing.trialDaysRemaining || 0;
+            
+            return (
+              <div key={listing.id} className="admin-prem-card" data-testid={`admin-prem-listing-${listing.id}`}>
+                <div className="admin-prem-header">
+                  <div>
+                    <div className="admin-prem-name">{listing.name}</div>
+                    <div className="admin-prem-meta">
+                      ID: {listing.id} · Owner: {listing.ownerEmail || "No owner"}
+                    </div>
+                  </div>
+                  <div className="admin-prem-badges">
+                    {isTrial ? (
+                      <span className="billing-status trial">
+                        Trial · {trialDays} day{trialDays !== 1 ? "s" : ""} left
+                      </span>
+                    ) : sub?.status === "active" ? (
+                      <span className="billing-status active">Active</span>
+                    ) : (
+                      <span className="billing-status trial">Premium</span>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Reallocate control */}
+                <div className="admin-prem-reallocate">
+                  <input
+                    type="email"
+                    placeholder="New owner email address"
+                    value={reallocateEmail[listing.id] || ""}
+                    onChange={e => setReallocateEmail(p => ({ ...p, [listing.id]: e.target.value }))}
+                    data-testid={`reallocate-email-${listing.id}`}
+                  />
+                  <button 
+                    className="btn bo bsm"
+                    onClick={() => handleReallocate(listing.id)}
+                    disabled={actionLoading === listing.id}
+                    data-testid={`reallocate-btn-${listing.id}`}
+                  >
+                    {actionLoading === listing.id ? "..." : "Transfer Control"}
+                  </button>
+                </div>
+                
+                {/* Actions */}
+                <div className="admin-prem-actions">
+                  <button 
+                    className="btn brej bsm"
+                    onClick={() => handleRemovePremium(listing.id)}
+                    disabled={actionLoading === listing.id}
+                    data-testid={`remove-premium-btn-${listing.id}`}
+                  >
+                    {actionLoading === listing.id ? "Processing..." : "🚫 Remove Premium Privileges"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // ADMIN PAGE
 // ─────────────────────────────────────────────
 function AnalyticsTab({ listings }) {
@@ -3670,7 +4231,7 @@ function AnalyticsTab({ listings }) {
 }
 
 function AdminPage() {
-  const { pending, setPending, listings, setListings, showToast, categories, setCategories, heroImage, setHeroImage, logoImage, setLogoImage, pendingReviews, setPendingReviews } = useContext(Ctx);
+  const { pending, setPending, listings, setListings, showToast, categories, setCategories, heroImage, setHeroImage, logoImage, setLogoImage, pendingReviews, setPendingReviews, user } = useContext(Ctx);
   const [tab, setTab]         = useState("live");
   const [editTarget, setEdit] = useState(null);
   const [showCM, setShowCM]   = useState(false);
@@ -3878,6 +4439,7 @@ function AdminPage() {
           ["live",     `Listings (${listings.length})`],
           ["questions", `Questions (${pendingQuestions.length})`],
           ["claims",   "Premium Requests"],
+          ["premium-mgmt", "💎 Premium Mgmt"],
           ["hero",     "Site Settings"],
         ].map(([t,l]) => (
           <button key={t} className={`atab ${tab===t?"on":""}`} onClick={()=>setTab(t)}>{l}</button>
@@ -3957,6 +4519,8 @@ function AdminPage() {
       )}
 
       {tab==="analytics" && <AnalyticsTab listings={listings} />}
+
+      {tab==="premium-mgmt" && <AdminPremiumManagement user={user} listings={listings} setListings={setListings} showToast={showToast} />}
 
       {tab==="hero" && (
         <div>
