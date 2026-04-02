@@ -17,7 +17,15 @@ app = FastAPI()
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"status": "ok", "message": "ShaperShed API is running"}
+    return {
+        "status": "ok",
+        "message": "ShaperShed API v2 is running",
+        "endpoints": {
+            "health": "/api/health",
+            "debug": "/api/debug", 
+            "listings": "/api/listings"
+        }
+    }
 
 app.add_middleware(
     CORSMiddleware,
