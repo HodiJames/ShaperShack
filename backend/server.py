@@ -14,6 +14,11 @@ from pymongo import MongoClient
 
 app = FastAPI()
 
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"status": "ok", "message": "ShaperShed API is running"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
