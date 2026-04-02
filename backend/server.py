@@ -23,10 +23,12 @@ app.add_middleware(
 )
 
 # MongoDB connection with timeout
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
-DB_NAME = os.environ.get("DB_NAME", "shaper_shed")
+# Check both uppercase and lowercase (Railway might use lowercase)
+MONGO_URL = os.environ.get("MONGO_URL") or os.environ.get("mongo_url") or "mongodb://localhost:27017"
+DB_NAME = os.environ.get("DB_NAME") or os.environ.get("db_name") or "shaper_shed"
 
 print(f"Connecting to MongoDB... DB_NAME={DB_NAME}", flush=True)
+print(f"MONGO_URL set: {bool(os.environ.get('MONGO_URL') or os.environ.get('mongo_url'))}", flush=True)
 
 client = MongoClient(
     MONGO_URL, 
@@ -842,10 +844,13 @@ async def debug_check():
     """Debug endpoint to check environment and DB connection"""
     import os
     
-    # Get all env vars that might be relevant
-    all_env = {k: v[:20] + "..." if len(v) > 20 else v for k, v in os.environ.items() if 'MONGO' in k.upper() or 'DB' in k.upper()}
+    # Get ALL env vars (truncate values for security)
+    all_env_keys = list(os.environ.keys())
+    mongo_vars = {k: (os.environ[k][:30] + "..." if len(os.environ[k]) > 30 else os.environ[k]) 
+                  for k in all_env_keys if 'mongo' in k.lower() or 'db' in k.lower()}
     
-    mongo_url = os.environ.get("MONGO_URL", "")
+    mongo_url_upper = os.environ.get("MONGO_URL", "")
+    mongo_url_lower = os.environ.get("mongo_url", "")
     
     try:
         count = listings_collection.count_documents({})
@@ -856,9 +861,10 @@ async def debug_check():
     return {
         "status": "ok",
         "db_name": DB_NAME,
-        "mongo_url_set": bool(mongo_url),
-        "mongo_url_preview": mongo_url[:30] + "..." if mongo_url else "NOT SET",
-        "relevant_env_vars": all_env,
+        "MONGO_URL_set": bool(mongo_url_upper),
+        "mongo_url_set": bool(mongo_url_lower),
+        "mongo_related_vars": mongo_vars,
+        "total_env_vars": len(all_env_keys),
         "db_status": db_status
     }
 
